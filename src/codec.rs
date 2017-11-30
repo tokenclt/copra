@@ -1,0 +1,51 @@
+use bytes::BytesMut;
+use protobuf::Message;
+use std::marker::PhantomData;
+
+use protocol::Meta;
+
+pub trait MethodCodec {
+    type Request;
+    type Response;
+    type Error;
+
+    fn decode(&self, buf: &Meta) -> Result<Self::Request, Self::Error>;
+
+    fn encode(&self, msg: Self::Response, buf: &mut BytesMut) -> Result<(), Self::Error>;
+}
+
+#[derive(Clone)]
+pub struct ProtobufCodec<T, U> {
+    phantom: PhantomData<(T, U)>,
+}
+
+#[derive(Clone)]
+pub enum ProtobufCodecError {
+    UnknownError,
+}
+
+impl<T, U> ProtobufCodec<T, U> {
+    pub fn new() -> Self {
+        ProtobufCodec {
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<T, U> MethodCodec for ProtobufCodec<T, U>
+where
+    T: Message,
+    U: Message,
+{
+    type Request = T;
+    type Response = U;
+    type Error = ProtobufCodecError;
+
+    fn decode(&self, buf: &Meta) -> Result<Self::Request, Self::Error> {
+        unimplemented!()
+    }
+
+    fn encode(&self, msg: Self::Response, buf: &mut BytesMut) -> Result<(), Self::Error> {
+        unimplemented!()
+    }
+}
