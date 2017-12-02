@@ -16,8 +16,8 @@ mod proto;
 
 
 trait EchoService {
-    type EchoFuture: Future<Item = EchoResponse, Error = MethodError>;
-    type RevEchoFuture: Future<Item = EchoResponse, Error = MethodError>;
+    type EchoFuture: Future<Item = EchoResponse, Error = MethodError> + 'static;
+    type RevEchoFuture: Future<Item = EchoResponse, Error = MethodError> + 'static;
 
     fn echo(&self, msg: EchoRequest) -> Self::EchoFuture;
 
@@ -54,34 +54,21 @@ impl<S: EchoService + Clone> Service for EchoRevEchoWrapper__<S> {
     }
 }
 
-#[derive(Clone)]
-struct EchoRegistrant<S: Clone> {
-    provider: S,
+struct EchoRegistrant<'a> {
+    entries: Vec<(String, NewEncapService<'a>)>,
 }
 
-impl<S: Clone> EchoRegistrant<S> {
-    pub fn new(provider: S) -> Self {
-        EchoRegistrant { provider }
-    }
-}
+impl<'a> EchoRegistrant<'a> {
+    pub fn new<S>(provider: S) -> Self
+    where
+        S: EchoService + Clone + 'a,
+    {
+        let mut entries = vec![];
+        let wrap = EchoEchoWrapper__(provider.clone());
+        let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
+        entries.push(("echo".to_string(), Box::new(method) as NewEncapService));
 
-impl<'a, S> Registrant<'a> for EchoRegistrant<S>
-where
-    S: EchoService + Clone + 'a,
-{
-    fn methods(&self) -> Vec<(String, NewEncapService<'a>)> {
-        let mut methods = vec![];
-        let method = EncapsulatedMethod::new(
-            ProtobufCodec::new(),
-            EchoEchoWrapper__(self.provider.clone()),
-        );
-        methods.push(("echo".to_string(), Box::new(method) as NewEncapService));
-
-        // let method = EncapsulatedMethod::new(ProtobufCodec::new(),
-        //     EchoRevEchoWrapper__(self.clone());
-        // methods.push(("rev_echo".to_string(), Box::new(method)));
-
-        methods
+        EchoRegistrant { entries }
     }
 }
 

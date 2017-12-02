@@ -29,7 +29,11 @@ impl<'a> ServiceRegistry<'a> {
         self.registry.insert(service_name.clone(), map);
     }
 
-    pub fn get_method(&self, service_name: &String, method_name: &String) -> Option<EncapService> {
+    pub fn get_method(
+        &self,
+        service_name: &String,
+        method_name: &String,
+    ) -> Option<EncapService<'a>> {
         self.registry
             .get(service_name)
             .and_then(|methods| methods.get(method_name))

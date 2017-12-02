@@ -38,20 +38,21 @@ impl From<ProtobufCodecError> for MethodError {
     }
 }
 
-pub struct EncapsulatedMethod<'a, C, S, T, U, E>
+pub struct EncapsulatedMethod<'a, C, S, T, U, F, E>
 where
-    C: Clone,
-    S: Clone + 'a,
+    S: Service<Request = T, Response = U, Future = F, Error = MethodError> + Clone + 'a,
+    F: Future<Item = U, Error = MethodError> + 'static,
 {
     codec: C,
     method: S,
-    phantom: PhantomData<(&'a (), T, U, E)>,
+    phantom: PhantomData<(&'a S, F, T, U, E)>,
 }
 
-impl<'a, C, S, T, U, E> EncapsulatedMethod<'a, C, S, T, U, E>
+impl<'a, C, S, T, U, F, E> EncapsulatedMethod<'a, C, S, T, U, F, E>
 where
     C: MethodCodec<Request = T, Response = U, Error = E> + Clone,
-    S: Service<Request = T, Response = U, Error = MethodError> + Clone + 'a,
+    S: Service<Request = T, Response = U, Future = F, Error = MethodError> + Clone + 'a,
+    F: Future<Item = U, Error = MethodError>,
 {
     pub fn new(codec: C, method: S) -> Self {
         EncapsulatedMethod {
@@ -62,10 +63,11 @@ where
     }
 }
 
-impl<'a, C, S, T, U, E> Service for EncapsulatedMethod<'a, C, S, T, U, E>
+impl<'a, C, S, T, U, F, E> Service for EncapsulatedMethod<'a, C, S, T, U, F, E>
 where
     C: MethodCodec<Request = T, Response = U, Error = E> + Clone,
-    S: Service<Request = T, Response = U, Error = MethodError> + Clone + 'a,
+    S: Service<Request = T, Response = U, Future = F, Error = MethodError> + Clone + 'a,
+    F: Future<Item = U, Error = MethodError>,
 {
     type Request = Meta;
     type Response = BytesMut;
@@ -77,12 +79,13 @@ where
     }
 }
 
-impl<'a, C, S, T, U, E> NewService for EncapsulatedMethod<'a, C, S, T, U, E>
+impl<'a, C, S, T, U, F, E> NewService for EncapsulatedMethod<'a, C, S, T, U, F, E>
 where
     C: MethodCodec<Request = T, Response = U, Error = E> + Clone + 'static,
-    S: Service<Request = T, Response = U, Error = MethodError> + Clone + 'a,
+    S: Service<Request = T, Response = U, Future = F, Error = MethodError> + Clone + 'a,
     T: 'static,
     U: 'static,
+    F: Future<Item = U, Error = MethodError> + 'static,
     E: 'static,
 {
     type Request = Meta;
