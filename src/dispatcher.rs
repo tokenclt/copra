@@ -2,22 +2,16 @@ use bytes::BytesMut;
 use std::collections::HashMap;
 use tokio_service::{NewService, Service};
 
-use service::{MethodError, MethodFuture};
+use service::{EncapService, MethodError, MethodFuture, NewEncapService};
 use protocol::Meta;
 
-pub type EncapService = Box<
-    Service<Request = Meta, Response = BytesMut, Error = MethodError, Future = MethodFuture>,
->;
 
-pub type NewEncapService = Box<
-    NewService<Request = Meta, Response = BytesMut, Error = MethodError, Instance = EncapService>,
->;
 
-pub struct ServiceRegistry {
-    registry: HashMap<String, HashMap<String, Box<NewEncapService>>>,
+pub struct ServiceRegistry<'a> {
+    registry: HashMap<String, HashMap<String, NewEncapService<'a>>>,
 }
 
-impl ServiceRegistry {
+impl<'a> ServiceRegistry<'a> {
     pub fn new() -> Self {
         ServiceRegistry {
             registry: HashMap::new(),
@@ -26,7 +20,7 @@ impl ServiceRegistry {
 
     pub fn register_service<T>(&mut self, service_name: &String, registrant: T)
     where
-        T: Registrant,
+        T: Registrant<'a>,
     {
         let mut map = HashMap::new();
         for (method_name, encap) in registrant.methods().into_iter() {
@@ -43,6 +37,6 @@ impl ServiceRegistry {
     }
 }
 
-pub trait Registrant: Clone {
-    fn methods(&self) -> Vec<(String, Box<NewEncapService>)>;
+pub trait Registrant<'a> {
+    fn methods(&self) -> Vec<(String, NewEncapService<'a>)>;
 }
