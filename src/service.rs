@@ -18,13 +18,41 @@ pub type EncapService<'a> = Box<
 >;
 
 pub type NewEncapService<'a> = Box<
-    NewService<
-        Request = Meta,
-        Response = BytesMut,
-        Error = MethodError,
-        Instance = EncapService<'a>,
-    >,
->;
+    NewService<Request = Meta, Response = BytesMut, Error = MethodError, Instance = EncapService<'a>> + 'a>;
+
+pub struct NewEncapsulatedMethod<'a, S: 'a>{
+    inner: Box<
+                NewService<
+                    Request = Meta,
+                    Response = BytesMut, 
+                    Error = MethodError, 
+                    Instance = S> + 'a>
+}
+
+impl<'a, S> NewEncapsulatedMethod<'a, S> 
+where S: NewService<Request = Meta, Response = BytesMut, Error = MethodError, Instance = S>,
+      S: Service<Request = Meta, Response = BytesMut, Error = MethodError, Future = MethodFuture>,
+      S: 'a
+{
+    pub fn new(method: S) -> Self {
+        NewEncapsulatedMethod{inner: Box::new(method) }
+    }
+} 
+
+impl<'a, S> NewService for NewEncapsulatedMethod<'a, S>
+where S: NewService<Request = Meta, Response = BytesMut, Error = MethodError, Instance = S>,
+      S: Service<Request = Meta, Response = BytesMut, Error = MethodError, Future = MethodFuture>,
+      S: 'a
+{
+    type Request = Meta;
+    type Response = BytesMut;
+    type Error = MethodError;
+    type Instance = EncapService<'a>;
+
+    fn new_service(&self) -> io::Result<Self::Instance> {
+        self.inner.new_service().map(|s| Box::new(s) as EncapService)
+    }
+}
 
 #[derive(Clone)]
 pub enum MethodError {
@@ -38,36 +66,23 @@ impl From<ProtobufCodecError> for MethodError {
     }
 }
 
-pub struct EncapsulatedMethod<'a, C, S, T, U, F, E>
-where
-    S: Service<Request = T, Response = U, Future = F, Error = MethodError> + Clone + 'a,
-    F: Future<Item = U, Error = MethodError> + 'static,
-{
+pub struct EncapsulatedMethod<C, S> {
     codec: C,
     method: S,
-    phantom: PhantomData<(&'a S, F, T, U, E)>,
 }
 
-impl<'a, C, S, T, U, F, E> EncapsulatedMethod<'a, C, S, T, U, F, E>
-where
-    C: MethodCodec<Request = T, Response = U, Error = E> + Clone,
-    S: Service<Request = T, Response = U, Future = F, Error = MethodError> + Clone + 'a,
-    F: Future<Item = U, Error = MethodError>,
-{
+// EncapsulatedMethod should not have lifetime parameter
+// it is the trait object that has a lifetime parameter
+impl<C, S> EncapsulatedMethod<C, S> where {
     pub fn new(codec: C, method: S) -> Self {
-        EncapsulatedMethod {
-            codec,
-            method,
-            phantom: PhantomData,
-        }
+        EncapsulatedMethod { codec, method }
     }
 }
 
-impl<'a, C, S, T, U, F, E> Service for EncapsulatedMethod<'a, C, S, T, U, F, E>
+impl<C, S> Service for EncapsulatedMethod<C, S>
 where
-    C: MethodCodec<Request = T, Response = U, Error = E> + Clone,
-    S: Service<Request = T, Response = U, Future = F, Error = MethodError> + Clone + 'a,
-    F: Future<Item = U, Error = MethodError>,
+    C: MethodCodec<Request = S::Request, Response = S::Response>,
+    S: Service,
 {
     type Request = Meta;
     type Response = BytesMut;
@@ -79,24 +94,21 @@ where
     }
 }
 
-impl<'a, C, S, T, U, F, E> NewService for EncapsulatedMethod<'a, C, S, T, U, F, E>
+impl<C, S> NewService for EncapsulatedMethod<C, S>
 where
-    C: MethodCodec<Request = T, Response = U, Error = E> + Clone + 'static,
-    S: Service<Request = T, Response = U, Future = F, Error = MethodError> + Clone + 'a,
-    T: 'static,
-    U: 'static,
-    F: Future<Item = U, Error = MethodError> + 'static,
-    E: 'static,
+    C: MethodCodec<Request = S::Request, Response = S::Response> + Clone,
+    S: Service + Clone,
 {
     type Request = Meta;
     type Response = BytesMut;
     type Error = MethodError;
-    type Instance = EncapService<'a>;
+    type Instance = Self;
 
     fn new_service(&self) -> io::Result<Self::Instance> {
-        Ok(Box::new(EncapsulatedMethod::new(
+        Ok(EncapsulatedMethod::new(
             self.codec.clone(),
             self.method.clone(),
-        )))
+        ))
     }
 }
+

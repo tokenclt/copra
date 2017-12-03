@@ -7,8 +7,8 @@ extern crate tokio_service;
 use futures::Future;
 use tokio_service::{NewService, Service};
 use proto::{EchoRequest, EchoResponse};
-use caper::service::{EncapsulatedMethod, MethodError, NewEncapService};
-use caper::dispatcher::Registrant;
+use caper::service::{EncapsulatedMethod, MethodError, NewEncapService, NewEncapsulatedMethod};
+use caper::dispatcher::{Registrant, ServiceRegistry};
 use caper::codec::{MethodCodec, ProtobufCodec};
 use protobuf::Message;
 
@@ -66,9 +66,18 @@ impl<'a> EchoRegistrant<'a> {
         let mut entries = vec![];
         let wrap = EchoEchoWrapper__(provider.clone());
         let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
-        entries.push(("echo".to_string(), Box::new(method) as NewEncapService));
+        entries.push((
+            "echo".to_string(),
+            Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
+        ));
 
         EchoRegistrant { entries }
+    }
+}
+
+impl<'a> Registrant<'a> for EchoRegistrant<'a> {
+    fn methods(&self) -> Vec<(String, NewEncapService<'a>)> {
+        vec![]
     }
 }
 
@@ -92,5 +101,10 @@ impl EchoService for Echo {
 
 
 fn main() {
+    let registrant = EchoRegistrant::new(Echo);
+    let mut registry = ServiceRegistry::new();
+    registry.register_service(&"Echo".to_string(), registrant);
+
+
     println!("Hello from Echo.");
 }
