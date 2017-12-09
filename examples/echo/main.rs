@@ -71,6 +71,13 @@ impl<'a> EchoRegistrant<'a> {
             Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
         ));
 
+        let wrap = EchoRevEchoWrapper__(provider.clone());
+        let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
+        entries.push((
+            "rev_echo".to_string(),
+            Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
+        ));
+
         EchoRegistrant { entries }
     }
 }

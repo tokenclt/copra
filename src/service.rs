@@ -11,27 +11,22 @@ use codec::{MethodCodec, ProtobufCodecError};
 
 type StdError = error::Error;
 
-pub type MethodFuture = Box<Future<Item = BytesMut, Error = MethodError>>;
+pub type MethodFuture = Box<Future<Item = Meta, Error = MethodError>>;
 
 pub type EncapService<'a> = Box<
-    Service<Request = Meta, Response = BytesMut, Error = MethodError, Future = MethodFuture> + 'a,
+    Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture> + 'a,
 >;
 
 pub type NewEncapService<'a> = Box<
-    NewService<Request = Meta, Response = BytesMut, Error = MethodError, Instance = EncapService<'a>> + 'a>;
+    NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = EncapService<'a>> + 'a>;
 
 pub struct NewEncapsulatedMethod<'a, S: 'a>{
-    inner: Box<
-                NewService<
-                    Request = Meta,
-                    Response = BytesMut, 
-                    Error = MethodError, 
-                    Instance = S> + 'a>
+    inner: Box<NewService<Request = Meta,Response = Meta, Error = MethodError, Instance = S> + 'a>
 }
 
 impl<'a, S> NewEncapsulatedMethod<'a, S> 
-where S: NewService<Request = Meta, Response = BytesMut, Error = MethodError, Instance = S>,
-      S: Service<Request = Meta, Response = BytesMut, Error = MethodError, Future = MethodFuture>,
+where S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S>,
+      S: Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture>,
       S: 'a
 {
     pub fn new(method: S) -> Self {
@@ -40,12 +35,12 @@ where S: NewService<Request = Meta, Response = BytesMut, Error = MethodError, In
 } 
 
 impl<'a, S> NewService for NewEncapsulatedMethod<'a, S>
-where S: NewService<Request = Meta, Response = BytesMut, Error = MethodError, Instance = S>,
-      S: Service<Request = Meta, Response = BytesMut, Error = MethodError, Future = MethodFuture>,
+where S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S>,
+      S: Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture>,
       S: 'a
 {
     type Request = Meta;
-    type Response = BytesMut;
+    type Response = Meta;
     type Error = MethodError;
     type Instance = EncapService<'a>;
 
@@ -71,8 +66,6 @@ pub struct EncapsulatedMethod<C, S> {
     method: S,
 }
 
-// EncapsulatedMethod should not have lifetime parameter
-// it is the trait object that has a lifetime parameter
 impl<C, S> EncapsulatedMethod<C, S> where {
     pub fn new(codec: C, method: S) -> Self {
         EncapsulatedMethod { codec, method }
@@ -85,7 +78,7 @@ where
     S: Service,
 {
     type Request = Meta;
-    type Response = BytesMut;
+    type Response = Meta;
     type Error = MethodError;
     type Future = MethodFuture;
 
@@ -100,7 +93,7 @@ where
     S: Service + Clone,
 {
     type Request = Meta;
-    type Response = BytesMut;
+    type Response = Meta;
     type Error = MethodError;
     type Instance = Self;
 
@@ -111,4 +104,3 @@ where
         ))
     }
 }
-
