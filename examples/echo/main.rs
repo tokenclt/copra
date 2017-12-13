@@ -4,7 +4,7 @@ extern crate protobuf;
 extern crate tokio_proto;
 extern crate tokio_service;
 
-use futures::Future;
+use futures::{Future, IntoFuture};
 use tokio_service::{NewService, Service};
 use proto::{EchoRequest, EchoResponse};
 use caper::service::{EncapsulatedMethod, MethodError, NewEncapService, NewEncapsulatedMethod};
@@ -15,7 +15,6 @@ use caper::stub::{RpcWrapper, StubCallFuture};
 use protobuf::Message;
 
 mod proto;
-
 
 pub trait EchoService {
     type EchoFuture: Future<Item = EchoResponse, Error = MethodError> + 'static;
@@ -133,11 +132,22 @@ impl EchoService for Echo {
     type RevEchoFuture = Box<Future<Item = EchoResponse, Error = MethodError>>;
 
     fn echo(&self, msg: EchoRequest) -> Self::EchoFuture {
-        unimplemented!()
+        let string = msg.msg;
+        let mut response = EchoResponse::new();
+        response.msg = string;
+        let future = Ok(response).into_future();
+
+        Box::new(future)
     }
 
     fn rev_echo(&self, msg: EchoRequest) -> Self::RevEchoFuture {
-        unimplemented!()
+        let string = msg.msg;
+        let rev: String = string.chars().rev().collect();
+        let mut response = EchoResponse::new();
+        response.msg = rev;
+        let future = Ok(response).into_future();
+
+        Box::new(future)
     }
 }
 
