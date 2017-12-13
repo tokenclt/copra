@@ -87,7 +87,6 @@ where
 }
 
 pub struct ChannelBuilder<S> {
-    option: ChannelOption,
     phantom: PhantomData<S>,
 }
 
@@ -129,7 +128,7 @@ impl Channel {
         Channel { sender }
     }
 
-    pub fn call(&mut self, req: Meta) -> ChannelFuture {
+    pub fn call(&self, req: Meta) -> ChannelFuture {
         let (tx, rx) = oneshot::channel();
         let fut = self.sender
             .unbounded_send((tx, req))

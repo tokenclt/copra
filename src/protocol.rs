@@ -1,4 +1,4 @@
-use bytes::BytesMut;
+use bytes::{Bytes, BytesMut};
 use futures::{future, Future};
 use std::io;
 use smallvec::SmallVec;
@@ -8,7 +8,12 @@ use tokio_io::codec::Framed;
 use tokio_proto::multiplex::{RequestId, ServerProto, ClientProto};
 
 // Abstract over every protocols
-pub struct Meta;
+#[derive(Debug)]
+pub struct Meta {
+    pub service_name: String,
+    pub method_name: String,
+    pub body: Bytes,
+}
 
 type MultiplexedFrame = (RequestId, Meta);
 

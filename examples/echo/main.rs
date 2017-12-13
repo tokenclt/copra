@@ -10,12 +10,14 @@ use proto::{EchoRequest, EchoResponse};
 use caper::service::{EncapsulatedMethod, MethodError, NewEncapService, NewEncapsulatedMethod};
 use caper::dispatcher::{Registrant, ServiceRegistry};
 use caper::codec::{MethodCodec, ProtobufCodec};
+use caper::channel::Channel;
+use caper::stub::{RpcWrapper, StubCallFuture};
 use protobuf::Message;
 
 mod proto;
 
 
-trait EchoService {
+pub trait EchoService {
     type EchoFuture: Future<Item = EchoResponse, Error = MethodError> + 'static;
     type RevEchoFuture: Future<Item = EchoResponse, Error = MethodError> + 'static;
 
@@ -54,16 +56,28 @@ impl<S: EchoService + Clone> Service for EchoRevEchoWrapper__<S> {
     }
 }
 
-struct EchoRegistrant<'a> {
-    entries: Vec<(String, NewEncapService<'a>)>,
+pub struct EchoRegistrant<'a, S: 'a> {
+    provider: S,
+    phantom: ::std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> EchoRegistrant<'a> {
-    pub fn new<S>(provider: S) -> Self
-    where
-        S: EchoService + Clone + 'a,
-    {
+impl<'a, S: 'a> EchoRegistrant<'a, S> {
+    pub fn new(provider: S) -> Self {
+        EchoRegistrant {
+            provider,
+            phantom: ::std::marker::PhantomData,
+        }
+    }
+}
+
+impl<'a, S> Registrant<'a> for EchoRegistrant<'a, S>
+where
+    S: EchoService + Clone + 'a,
+{
+    fn methods(&self) -> Vec<(String, NewEncapService<'a>)> {
         let mut entries = vec![];
+        let provider = &self.provider;
+
         let wrap = EchoEchoWrapper__(provider.clone());
         let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
         entries.push((
@@ -78,16 +92,37 @@ impl<'a> EchoRegistrant<'a> {
             Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
         ));
 
-        EchoRegistrant { entries }
+        entries
     }
 }
 
-impl<'a> Registrant<'a> for EchoRegistrant<'a> {
-    fn methods(&self) -> Vec<(String, NewEncapService<'a>)> {
-        vec![]
+#[derive(Clone)]
+pub struct EchoStub<'a> {
+    echo_wrapper: RpcWrapper<'a, ProtobufCodec<EchoResponse, EchoRequest>>,
+    rev_echo_wrapper: RpcWrapper<'a, ProtobufCodec<EchoResponse, EchoRequest>>,
+}
+
+impl<'a> EchoStub<'a> {
+    pub fn new(channel: &'a Channel) -> Self {
+        EchoStub {
+            echo_wrapper: RpcWrapper::new(ProtobufCodec::new(), channel),
+            rev_echo_wrapper: RpcWrapper::new(ProtobufCodec::new(), channel),
+        }
+    }
+
+    pub fn echo(&'a self, msg: EchoRequest) -> StubCallFuture<'a, EchoResponse> {
+        self.echo_wrapper
+            .call((msg, "Echo".to_string(), "echo".to_string()))
+    }
+
+    pub fn rev_echo(&'a self, msg: EchoRequest) -> StubCallFuture<'a, EchoResponse> {
+        self.rev_echo_wrapper
+            .call((msg, "Echo".to_string(), "rev_echo".to_string()))
     }
 }
 
+
+// user visible from here
 
 #[derive(Clone)]
 struct Echo;

@@ -14,7 +14,7 @@ pub mod channel;
 pub mod codec;
 pub mod protocol;
 pub mod service;
-//pub mod stub;
+pub mod stub;
 pub mod dispatcher;
 
 use std::io;

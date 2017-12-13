@@ -1,4 +1,4 @@
-use bytes::BytesMut;
+use bytes::Bytes;
 use protobuf::Message;
 use std::marker::PhantomData;
 
@@ -9,9 +9,9 @@ pub trait MethodCodec {
     type Response;
     type Error;
 
-    fn decode(&self, buf: &Meta) -> Result<Self::Request, Self::Error>;
+    fn decode(&self, buf: Bytes) -> Result<Self::Request, Self::Error>;
 
-    fn encode(&self, msg: Self::Response, buf: &mut BytesMut) -> Result<(), Self::Error>;
+    fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error>;
 }
 
 #[derive(Clone)]
@@ -41,11 +41,11 @@ where
     type Response = U;
     type Error = ProtobufCodecError;
 
-    fn decode(&self, buf: &Meta) -> Result<Self::Request, Self::Error> {
+    fn decode(&self, buf: Bytes) -> Result<Self::Request, Self::Error> {
         unimplemented!()
     }
 
-    fn encode(&self, msg: Self::Response, buf: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error> {
         unimplemented!()
     }
 }
