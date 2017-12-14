@@ -11,33 +11,39 @@ use codec::{MethodCodec, ProtobufCodecError};
 
 type StdError = error::Error;
 
-pub type MethodFuture = Box<Future<Item = Meta, Error = MethodError>>;
+pub type MethodFuture<'a> = Box<Future<Item = Meta, Error = MethodError> + 'a>;
 
 pub type EncapService<'a> = Box<
-    Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture> + 'a,
+    Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture<'a>> + 'a,
 >;
 
 pub type NewEncapService<'a> = Box<
-    NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = EncapService<'a>> + 'a>;
+    NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = EncapService<'a>>
+        + 'a,
+>;
 
-pub struct NewEncapsulatedMethod<'a, S: 'a>{
-    inner: Box<NewService<Request = Meta,Response = Meta, Error = MethodError, Instance = S> + 'a>
+pub struct NewEncapsulatedMethod<'a, S: 'a> {
+    inner: Box<NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S> + 'a>,
 }
 
-impl<'a, S> NewEncapsulatedMethod<'a, S> 
-where S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S>,
-      S: Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture>,
-      S: 'a
+impl<'a, S> NewEncapsulatedMethod<'a, S>
+where
+    S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S>,
+    S: Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture<'a>>,
+    S: 'a,
 {
     pub fn new(method: S) -> Self {
-        NewEncapsulatedMethod{inner: Box::new(method) }
+        NewEncapsulatedMethod {
+            inner: Box::new(method),
+        }
     }
-} 
+}
 
 impl<'a, S> NewService for NewEncapsulatedMethod<'a, S>
-where S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S>,
-      S: Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture>,
-      S: 'a
+where
+    S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S>,
+    S: Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture<'a>>,
+    S: 'a,
 {
     type Request = Meta;
     type Response = Meta;
@@ -45,7 +51,9 @@ where S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instan
     type Instance = EncapService<'a>;
 
     fn new_service(&self) -> io::Result<Self::Instance> {
-        self.inner.new_service().map(|s| Box::new(s) as EncapService)
+        self.inner
+            .new_service()
+            .map(|s| Box::new(s) as EncapService)
     }
 }
 
@@ -61,36 +69,41 @@ impl From<ProtobufCodecError> for MethodError {
     }
 }
 
-pub struct EncapsulatedMethod<C, S> {
+pub struct EncapsulatedMethod<'a, C, S: 'a> {
     codec: C,
     method: S,
+    phantom: PhantomData<&'a ()>,
 }
 
-impl<C, S> EncapsulatedMethod<C, S> where {
+impl<'a, C, S: 'a> EncapsulatedMethod<'a, C, S> where {
     pub fn new(codec: C, method: S) -> Self {
-        EncapsulatedMethod { codec, method }
+        EncapsulatedMethod {
+            codec,
+            method,
+            phantom: PhantomData,
+        }
     }
 }
 
-impl<C, S> Service for EncapsulatedMethod<C, S>
+impl<'a, C, S> Service for EncapsulatedMethod<'a, C, S>
 where
     C: MethodCodec<Request = S::Request, Response = S::Response>,
-    S: Service,
+    S: Service + 'a,
 {
     type Request = Meta;
     type Response = Meta;
     type Error = MethodError;
-    type Future = MethodFuture;
+    type Future = MethodFuture<'a>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
         unimplemented!()
     }
 }
 
-impl<C, S> NewService for EncapsulatedMethod<C, S>
+impl<'a, C, S> NewService for EncapsulatedMethod<'a, C, S>
 where
     C: MethodCodec<Request = S::Request, Response = S::Response> + Clone,
-    S: Service + Clone,
+    S: Service + Clone + 'a,
 {
     type Request = Meta;
     type Response = Meta;

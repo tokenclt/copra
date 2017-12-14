@@ -15,7 +15,7 @@ use std::marker::PhantomData;
 use std::net::{AddrParseError, SocketAddr};
 use std::time::Duration;
 
-use protocol::{BrpcProtocol, Meta, MetaServerProtocol, ProtoCodec, RpcProtocol};
+use protocol::{BrpcProtocol, Meta, ProtoCodec, Protocol, RpcProtocol};
 use service::MethodError;
 
 pub type ChannelFuture = Box<Future<Item = Meta, Error = MethodError>>;
@@ -42,12 +42,6 @@ impl From<AddrParseError> for ChannelInitError {
     fn from(_: AddrParseError) -> Self {
         ChannelInitError::AddrParseError
     }
-}
-
-#[derive(Clone, Debug)]
-pub enum Protocol {
-    Brpc,
-    Http,
 }
 
 #[derive(Clone, Debug)]
@@ -82,7 +76,8 @@ where
     type BindTransport = Result<Self::Transport, io::Error>;
 
     fn bind_transport(&self, io: T) -> Self::BindTransport {
-        Ok(io.framed(ProtoCodec::new()))
+        let codec = ProtoCodec::with_protocol(self.proto.box_clone());
+        Ok(io.framed(codec))
     }
 }
 
@@ -99,7 +94,7 @@ impl<S> ChannelBuilder<S> {
     ) -> ConnectFuture<ConcreteClientService> {
         let socket_addr = match addr.parse() {
             Ok(a) => a,
-            Err(e) => {
+            Err(_) => {
                 let err = Err(ChannelInitError::AddrParseError);
                 return Box::new(err.into_future());
             }

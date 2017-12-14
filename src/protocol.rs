@@ -5,7 +5,7 @@ use smallvec::SmallVec;
 use tokio_io::codec::{Decoder, Encoder};
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::Framed;
-use tokio_proto::multiplex::{RequestId, ServerProto, ClientProto};
+use tokio_proto::multiplex::{ClientProto, RequestId, ServerProto};
 
 // Abstract over every protocols
 #[derive(Debug)]
@@ -17,13 +17,19 @@ pub struct Meta {
 
 type MultiplexedFrame = (RequestId, Meta);
 
+#[derive(Clone, Debug)]
+pub enum Protocol {
+    Brpc,
+    Http,
+}
+
 pub enum ProtocolError {
     TryOthers,
     NeedMoreBytes,
     AbsolutelyWrong,
 }
 
-pub trait RpcProtocol {
+pub trait RpcProtocol: Sync + Send {
     fn try_parse(&self, buf: &mut BytesMut) -> Result<Option<Meta>, ProtocolError>;
 
     fn box_clone(&self) -> Box<RpcProtocol>;
@@ -40,7 +46,6 @@ impl RpcProtocol for BrpcProtocol {
     fn box_clone(&self) -> Box<RpcProtocol> {
         Box::new(self.clone())
     }
-
 }
 
 #[derive(Clone)]
@@ -68,6 +73,24 @@ impl ProtoCodec {
             cached_scheme: None,
         }
     }
+
+    pub fn with_protocol(proto: Box<RpcProtocol>) -> Self {
+        let mut vec = SmallVec::new();
+        vec.push(proto);
+        ProtoCodec {
+            schemes: vec,
+            cached_scheme: Some(0),
+        }
+    }
+
+    pub fn with_protocols(protos: &[Box<RpcProtocol>]) -> Self {
+        let schemes: SmallVec<[Box<RpcProtocol>; 4]> =
+            protos.iter().map(|proto| proto.box_clone()).collect();
+        ProtoCodec {
+            schemes,
+            cached_scheme: None,
+        }
+    }
 }
 
 impl Decoder for ProtoCodec {
@@ -87,20 +110,3 @@ impl Encoder for ProtoCodec {
         unimplemented!()
     }
 }
-
-pub struct MetaServerProtocol;
-
-impl<T> ServerProto<T> for MetaServerProtocol
-where
-    T: AsyncRead + AsyncWrite + 'static,
-{
-    type Request = Meta;
-    type Response = Meta;
-    type Transport = Framed<T, ProtoCodec>;
-    type BindTransport = Result<Self::Transport, io::Error>;
-
-    fn bind_transport(&self, io: T) -> Self::BindTransport {
-        Ok(io.framed(ProtoCodec::new()))
-    }
-}
-
