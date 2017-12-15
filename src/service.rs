@@ -1,4 +1,4 @@
-use bytes::BytesMut;
+use bytes::{Bytes, BytesMut};
 use futures::Future;
 use protobuf::Message;
 use std::marker::PhantomData;
@@ -6,31 +6,40 @@ use std::error;
 use std::io;
 use tokio_service::{NewService, Service};
 
-use protocol::Meta;
 use codec::{MethodCodec, ProtobufCodecError};
+use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
 
 type StdError = error::Error;
 
-pub type MethodFuture<'a> = Box<Future<Item = Meta, Error = MethodError> + 'a>;
+type Body = Bytes;
 
-pub type EncapService<'a> = Box<
-    Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture<'a>> + 'a,
+pub type MethodFuture = Box<Future<Item = Body, Error = MethodError>>;
+
+pub type EncapService = Box<
+    Service<Request = Body, Response = Body, Error = MethodError, Future = MethodFuture>
+        + Send
+        + Sync,
 >;
 
-pub type NewEncapService<'a> = Box<
-    NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = EncapService<'a>>
-        + 'a,
+pub type NewEncapService = Box<
+    NewService<Request = Body, Response = Body, Error = MethodError, Instance = EncapService>
+        + Send
+        + Sync,
 >;
 
-pub struct NewEncapsulatedMethod<'a, S: 'a> {
-    inner: Box<NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S> + 'a>,
+pub struct NewEncapsulatedMethod<S: Send + Sync> {
+    inner: Box<
+        NewService<Request = Body, Response = Body, Error = MethodError, Instance = S>
+            + Send
+            + Sync,
+    >,
 }
 
-impl<'a, S> NewEncapsulatedMethod<'a, S>
+impl<S> NewEncapsulatedMethod<S>
 where
-    S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S>,
-    S: Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture<'a>>,
-    S: 'a,
+    S: NewService<Request = Body, Response = Body, Error = MethodError, Instance = S>,
+    S: Service<Request = Body, Response = Body, Error = MethodError, Future = MethodFuture>,
+    S: 'static + Send + Sync,
 {
     pub fn new(method: S) -> Self {
         NewEncapsulatedMethod {
@@ -39,16 +48,16 @@ where
     }
 }
 
-impl<'a, S> NewService for NewEncapsulatedMethod<'a, S>
+impl<S> NewService for NewEncapsulatedMethod<S>
 where
-    S: NewService<Request = Meta, Response = Meta, Error = MethodError, Instance = S>,
-    S: Service<Request = Meta, Response = Meta, Error = MethodError, Future = MethodFuture<'a>>,
-    S: 'a,
+    S: NewService<Request = Body, Response = Body, Error = MethodError, Instance = S>,
+    S: Service<Request = Body, Response = Body, Error = MethodError, Future = MethodFuture>,
+    S: 'static + Send + Sync,
 {
-    type Request = Meta;
-    type Response = Meta;
+    type Request = Body;
+    type Response = Body;
     type Error = MethodError;
-    type Instance = EncapService<'a>;
+    type Instance = EncapService;
 
     fn new_service(&self) -> io::Result<Self::Instance> {
         self.inner
@@ -57,7 +66,7 @@ where
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum MethodError {
     UnknownError,
     CodecError(ProtobufCodecError),
@@ -69,44 +78,39 @@ impl From<ProtobufCodecError> for MethodError {
     }
 }
 
-pub struct EncapsulatedMethod<'a, C, S: 'a> {
+pub struct EncapsulatedMethod<C, S> {
     codec: C,
     method: S,
-    phantom: PhantomData<&'a ()>,
 }
 
-impl<'a, C, S: 'a> EncapsulatedMethod<'a, C, S> where {
+impl<C, S> EncapsulatedMethod<C, S> where {
     pub fn new(codec: C, method: S) -> Self {
-        EncapsulatedMethod {
-            codec,
-            method,
-            phantom: PhantomData,
-        }
+        EncapsulatedMethod { codec, method }
     }
 }
 
-impl<'a, C, S> Service for EncapsulatedMethod<'a, C, S>
+impl<C, S> Service for EncapsulatedMethod<C, S>
 where
     C: MethodCodec<Request = S::Request, Response = S::Response>,
-    S: Service + 'a,
+    S: Service + Send + Sync,
 {
-    type Request = Meta;
-    type Response = Meta;
+    type Request = Body;
+    type Response = Body;
     type Error = MethodError;
-    type Future = MethodFuture<'a>;
+    type Future = MethodFuture;
 
     fn call(&self, req: Self::Request) -> Self::Future {
         unimplemented!()
     }
 }
 
-impl<'a, C, S> NewService for EncapsulatedMethod<'a, C, S>
+impl<C, S> NewService for EncapsulatedMethod<C, S>
 where
     C: MethodCodec<Request = S::Request, Response = S::Response> + Clone,
-    S: Service + Clone + 'a,
+    S: Service + Clone + Send + Sync,
 {
-    type Request = Meta;
-    type Response = Meta;
+    type Request = Body;
+    type Response = Body;
     type Error = MethodError;
     type Instance = Self;
 

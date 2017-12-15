@@ -1,4 +1,4 @@
-use bytes::BytesMut;
+use bytes::{Bytes, BytesMut};
 use tokio_core::net::TcpStream;
 use tokio_core::reactor::Handle;
 use tokio_io::{AsyncRead, AsyncWrite};
@@ -15,10 +15,14 @@ use std::marker::PhantomData;
 use std::net::{AddrParseError, SocketAddr};
 use std::time::Duration;
 
-use protocol::{BrpcProtocol, Meta, ProtoCodec, Protocol, RpcProtocol};
+use protocol::{BrpcProtocol, ProtoCodecClient, Protocol, RpcProtocol};
 use service::MethodError;
+use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
 
-pub type ChannelFuture = Box<Future<Item = Meta, Error = MethodError>>;
+type RequestPackage = (RpcRequestMeta, Bytes);
+type ResponsePackage = (RpcResponseMeta, Bytes);
+
+pub type ChannelFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
 
 pub type ConnectFuture<S> = Box<
     Future<Item = (Channel, ChannelBackend<S>), Error = ChannelInitError>,
@@ -26,13 +30,13 @@ pub type ConnectFuture<S> = Box<
 
 type ConcreteClientService = ClientService<TcpStream, MetaClientProtocol>;
 
-type OneShotSender = oneshot::Sender<Result<Meta, MethodError>>;
+type OneShotSender = oneshot::Sender<io::Result<ResponsePackage>>;
 
-type ChannelSender = mpsc::UnboundedSender<(OneShotSender, Meta)>;
+type ChannelSender = mpsc::UnboundedSender<(OneShotSender, RequestPackage)>;
 
-type ChannelReceiver = mpsc::UnboundedReceiver<(OneShotSender, Meta)>;
+type ChannelReceiver = mpsc::UnboundedReceiver<(OneShotSender, RequestPackage)>;
 
-
+#[derive(Clone, Debug)]
 pub enum ChannelInitError {
     AddrParseError,
     UnknownError,
@@ -49,6 +53,16 @@ pub struct ChannelOption {
     pub protocol: Protocol,
     pub deadline: Duration,
     pub max_retry: u32,
+}
+
+impl ChannelOption {
+    pub fn new() -> Self {
+        ChannelOption {
+            protocol: Protocol::Brpc,
+            deadline: Duration::from_secs(1),
+            max_retry: 3,
+        }
+    }
 }
 
 pub struct MetaClientProtocol {
@@ -70,22 +84,20 @@ impl<T> ClientProto<T> for MetaClientProtocol
 where
     T: AsyncRead + AsyncWrite + 'static,
 {
-    type Request = Meta;
-    type Response = Meta;
-    type Transport = Framed<T, ProtoCodec>;
+    type Request = RequestPackage;
+    type Response = ResponsePackage;
+    type Transport = Framed<T, ProtoCodecClient>;
     type BindTransport = Result<Self::Transport, io::Error>;
 
     fn bind_transport(&self, io: T) -> Self::BindTransport {
-        let codec = ProtoCodec::with_protocol(self.proto.box_clone());
+        let codec = ProtoCodecClient::new(self.proto.box_clone());
         Ok(io.framed(codec))
     }
 }
 
-pub struct ChannelBuilder<S> {
-    phantom: PhantomData<S>,
-}
+pub struct ChannelBuilder;
 
-impl<S> ChannelBuilder<S> {
+impl ChannelBuilder {
     /// Connect to the server at X.X.X.X:port
     pub fn single_server(
         addr: &str,
@@ -105,9 +117,7 @@ impl<S> ChannelBuilder<S> {
         let fut = TcpClient::new(MetaClientProtocol::new(&option))
             .connect(&socket_addr, &handle)
             .map_err(|_| ChannelInitError::UnknownError)
-            .map(|service| {
-                (channel, ChannelBackend::new(option, rx, handle, service))
-            });
+            .map(|service| (channel, ChannelBackend::new(option, rx, handle, service)));
 
         Box::new(fut)
     }
@@ -123,7 +133,7 @@ impl Channel {
         Channel { sender }
     }
 
-    pub fn call(&self, req: Meta) -> ChannelFuture {
+    pub fn call(&self, req: RequestPackage) -> ChannelFuture {
         let (tx, rx) = oneshot::channel();
         let fut = self.sender
             .unbounded_send((tx, req))
@@ -138,6 +148,7 @@ impl Channel {
     }
 }
 
+#[must_use = "Channel backend should be spawned on an event loop, otherwise no request will be sent"]
 pub struct ChannelBackend<S> {
     option: ChannelOption,
     recv: ChannelReceiver,
@@ -163,14 +174,12 @@ impl<S> ChannelBackend<S> {
 
 impl<S> ChannelBackend<S>
 where
-    S: Service<Request = Meta, Response = Meta, Error = io::Error>,
+    S: Service<Request = RequestPackage, Response = ResponsePackage, Error = io::Error>,
     S: 'static,
 {
-    fn spawn(&mut self, sender: OneShotSender, meta: Meta) {
+    fn spawn(&mut self, sender: OneShotSender, meta: RequestPackage) {
         let fut = self.abstract_service
             .call(meta)
-            // TODO: fill in a meaningful error
-            .map_err(|e| MethodError::UnknownError)
             .then(|result| sender.send(result))
             // TODO: Or maybe just ignore this error, for the rpc request might be cancelled.
             .map_err(|_| panic!("The receiving end of the oneshot is dropped."));
@@ -180,7 +189,7 @@ where
 
 impl<S> Future for ChannelBackend<S>
 where
-    S: Service<Request = Meta, Response = Meta, Error = io::Error>,
+    S: Service<Request = RequestPackage, Response = ResponsePackage, Error = io::Error>,
     S: 'static,
 {
     type Item = ();

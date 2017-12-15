@@ -17,6 +17,7 @@ pub mod service;
 pub mod stub;
 pub mod dispatcher;
 pub mod server;
+pub mod message;
 
 use std::io;
 use std::str;

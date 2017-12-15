@@ -7,15 +7,12 @@ use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::Framed;
 use tokio_proto::multiplex::{ClientProto, RequestId, ServerProto};
 
-// Abstract over every protocols
-#[derive(Debug)]
-pub struct Meta {
-    pub service_name: String,
-    pub method_name: String,
-    pub body: Bytes,
-}
+use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
 
-type MultiplexedFrame = (RequestId, Meta);
+type RequestPackage = (RpcRequestMeta, Bytes);
+
+type ResponsePackage = (RpcResponseMeta, Bytes);
+// Abstract over every protocols
 
 #[derive(Clone, Debug)]
 pub enum Protocol {
@@ -30,7 +27,7 @@ pub enum ProtocolError {
 }
 
 pub trait RpcProtocol: Sync + Send {
-    fn try_parse(&self, buf: &mut BytesMut) -> Result<Option<Meta>, ProtocolError>;
+    fn try_parse(&self, buf: &mut BytesMut) -> Result<Option<RequestPackage>, ProtocolError>;
 
     fn box_clone(&self) -> Box<RpcProtocol>;
 }
@@ -39,7 +36,7 @@ pub trait RpcProtocol: Sync + Send {
 pub struct BrpcProtocol;
 
 impl RpcProtocol for BrpcProtocol {
-    fn try_parse(&self, buf: &mut BytesMut) -> Result<Option<Meta>, ProtocolError> {
+    fn try_parse(&self, buf: &mut BytesMut) -> Result<Option<RequestPackage>, ProtocolError> {
         unimplemented!()
     }
 
@@ -52,7 +49,7 @@ impl RpcProtocol for BrpcProtocol {
 pub struct HttpProtocol;
 
 impl RpcProtocol for HttpProtocol {
-    fn try_parse(&self, buf: &mut BytesMut) -> Result<Option<Meta>, ProtocolError> {
+    fn try_parse(&self, buf: &mut BytesMut) -> Result<Option<RequestPackage>, ProtocolError> {
         unimplemented!()
     }
 
@@ -67,23 +64,7 @@ pub struct ProtoCodec {
 }
 
 impl ProtoCodec {
-    pub fn new() -> Self {
-        ProtoCodec {
-            schemes: SmallVec::new(),
-            cached_scheme: None,
-        }
-    }
-
-    pub fn with_protocol(proto: Box<RpcProtocol>) -> Self {
-        let mut vec = SmallVec::new();
-        vec.push(proto);
-        ProtoCodec {
-            schemes: vec,
-            cached_scheme: Some(0),
-        }
-    }
-
-    pub fn with_protocols(protos: &[Box<RpcProtocol>]) -> Self {
+    pub fn new(protos: &[Box<RpcProtocol>]) -> Self {
         let schemes: SmallVec<[Box<RpcProtocol>; 4]> =
             protos.iter().map(|proto| proto.box_clone()).collect();
         ProtoCodec {
@@ -94,7 +75,7 @@ impl ProtoCodec {
 }
 
 impl Decoder for ProtoCodec {
-    type Item = (RequestId, Meta);
+    type Item = (RequestId, RequestPackage);
     type Error = io::Error;
 
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
@@ -103,7 +84,36 @@ impl Decoder for ProtoCodec {
 }
 
 impl Encoder for ProtoCodec {
-    type Item = (RequestId, Meta);
+    type Item = (RequestId, ResponsePackage);
+    type Error = io::Error;
+
+    fn encode(&mut self, msg: Self::Item, buf: &mut BytesMut) -> Result<(), Self::Error> {
+        unimplemented!()
+    }
+}
+
+
+pub struct ProtoCodecClient {
+    scheme: Box<RpcProtocol>,
+}
+
+impl ProtoCodecClient {
+    pub fn new(proto: Box<RpcProtocol>) -> Self {
+        ProtoCodecClient { scheme: proto }
+    }
+}
+
+impl Decoder for ProtoCodecClient {
+    type Item = (RequestId, ResponsePackage);
+    type Error = io::Error;
+
+    fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+        unimplemented!()
+    }
+}
+
+impl Encoder for ProtoCodecClient {
+    type Item = (RequestId, RequestPackage);
     type Error = io::Error;
 
     fn encode(&mut self, msg: Self::Item, buf: &mut BytesMut) -> Result<(), Self::Error> {

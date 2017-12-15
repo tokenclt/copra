@@ -2,8 +2,6 @@ use bytes::Bytes;
 use protobuf::Message;
 use std::marker::PhantomData;
 
-use protocol::Meta;
-
 pub trait MethodCodec {
     type Request;
     type Response;
@@ -14,14 +12,14 @@ pub trait MethodCodec {
     fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error>;
 }
 
-#[derive(Clone)]
-pub struct ProtobufCodec<T, U> {
-    phantom: PhantomData<(T, U)>,
+#[derive(Clone, Debug)]
+pub enum ProtobufCodecError {
+    UnknownError,
 }
 
 #[derive(Clone)]
-pub enum ProtobufCodecError {
-    UnknownError,
+pub struct ProtobufCodec<T, U> {
+    phantom: PhantomData<(T, U)>,
 }
 
 impl<T, U> ProtobufCodec<T, U> {

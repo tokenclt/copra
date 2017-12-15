@@ -15,6 +15,9 @@ tokio-service = "0.1"
 protobuf = "1.4"
 smallvec = "0.5"
 
+[build-dependencies]
+protoc-rust = "1.4"
+
 [[example]]
 name = "echo"
 path = "examples/echo/main.rs"

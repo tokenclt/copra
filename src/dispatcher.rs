@@ -3,15 +3,12 @@ use std::collections::HashMap;
 use tokio_service::{NewService, Service};
 
 use service::{EncapService, MethodError, MethodFuture, NewEncapService};
-use protocol::Meta;
 
-
-
-pub struct ServiceRegistry<'a> {
-    registry: HashMap<String, HashMap<String, NewEncapService<'a>>>,
+pub struct ServiceRegistry{
+    registry: HashMap<String, HashMap<String, NewEncapService>>,
 }
 
-impl<'a> ServiceRegistry<'a> {
+impl ServiceRegistry {
     pub fn new() -> Self {
         ServiceRegistry {
             registry: HashMap::new(),
@@ -20,7 +17,7 @@ impl<'a> ServiceRegistry<'a> {
 
     pub fn register_service<T>(&mut self, service_name: &String, registrant: T)
     where
-        T: Registrant<'a>,
+        T: Registrant,
     {
         let mut map = HashMap::new();
         for (method_name, encap) in registrant.methods().into_iter() {
@@ -31,9 +28,9 @@ impl<'a> ServiceRegistry<'a> {
 
     pub fn get_method(
         &self,
-        service_name: &String,
-        method_name: &String,
-    ) -> Option<EncapService<'a>> {
+        service_name: &str,
+        method_name: &str,
+    ) -> Option<EncapService> {
         self.registry
             .get(service_name)
             .and_then(|methods| methods.get(method_name))
@@ -41,6 +38,6 @@ impl<'a> ServiceRegistry<'a> {
     }
 }
 
-pub trait Registrant<'a> {
-    fn methods(&self) -> Vec<(String, NewEncapService<'a>)>;
+pub trait Registrant {
+    fn methods(&self) -> Vec<(String, NewEncapService)>;
 }
