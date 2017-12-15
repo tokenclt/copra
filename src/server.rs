@@ -35,7 +35,7 @@ impl MetaServerProtocol {
             .protocols
             .iter()
             .map(|proto| match proto {
-                &Protocol::Brpc => Box::new(BrpcProtocol) as Box<RpcProtocol>,
+                &Protocol::Brpc => Box::new(BrpcProtocol::new()) as Box<RpcProtocol>,
                 _ => unimplemented!(),
             })
             .collect();
@@ -114,9 +114,11 @@ pub struct Server {
 impl Server {
     pub fn new(addr: &str, option: ServerOption) -> Self {
         let socket_addr = addr.parse().expect("Parse listening addr failed");
+        let server = TcpServer::new(MetaServerProtocol::new(&option), socket_addr);
+        info!("Server listensing : {}", socket_addr);
         Server {
             services: Arc::new(ServiceRegistry::new()),
-            listener: TcpServer::new(MetaServerProtocol::new(&option), socket_addr),
+            listener: server,
         }
     }
 

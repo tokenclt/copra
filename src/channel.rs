@@ -73,7 +73,7 @@ impl MetaClientProtocol {
     pub fn new(option: &ChannelOption) -> Self {
         let proto = match option.protocol {
             // TODO: unify construction interface of protocols
-            Protocol::Brpc => Box::new(BrpcProtocol),
+            Protocol::Brpc => Box::new(BrpcProtocol::new()),
             _ => unimplemented!(),
         };
         MetaClientProtocol { proto }
@@ -117,7 +117,10 @@ impl ChannelBuilder {
         let fut = TcpClient::new(MetaClientProtocol::new(&option))
             .connect(&socket_addr, &handle)
             .map_err(|_| ChannelInitError::UnknownError)
-            .map(|service| (channel, ChannelBackend::new(option, rx, handle, service)));
+            .map(|service| {
+                info!("Channel connection established");
+                (channel, ChannelBackend::new(option, rx, handle, service))
+            });
 
         Box::new(fut)
     }
@@ -139,7 +142,7 @@ impl Channel {
             .unbounded_send((tx, req))
             .map_err(|_| panic!("The receiving end of the mpsc is dropped."))
             .into_future()
-            .and_then(|_| rx)
+            .and_then(|_| {debug!("Request sent through channel"); rx})
             // TODO: maybe ignore this.
             // refering to request cancelation.
             .map_err(|_| panic!("The sending end of the oneshot is dropped"))
@@ -183,6 +186,7 @@ where
             .then(|result| sender.send(result))
             // TODO: Or maybe just ignore this error, for the rpc request might be cancelled.
             .map_err(|_| panic!("The receiving end of the oneshot is dropped."));
+        debug!("Request sent through channel backend");
         self.handle.spawn(fut);
     }
 }
