@@ -6,7 +6,7 @@ use std::error;
 use std::io;
 use tokio_service::{NewService, Service};
 
-use codec::{MethodCodec, ProtobufCodecError};
+use codec::{MethodCodec, ProtobufError};
 use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
 
 type StdError = error::Error;
@@ -66,14 +66,14 @@ where
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub enum MethodError {
     UnknownError,
-    CodecError(ProtobufCodecError),
+    CodecError(ProtobufError),
 }
 
-impl From<ProtobufCodecError> for MethodError {
-    fn from(e: ProtobufCodecError) -> Self {
+impl From<ProtobufError> for MethodError {
+    fn from(e: ProtobufError) -> Self {
         MethodError::CodecError(e)
     }
 }

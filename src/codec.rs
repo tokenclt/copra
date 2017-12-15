@@ -1,5 +1,8 @@
+pub use protobuf::ProtobufError;
+
 use bytes::Bytes;
-use protobuf::Message;
+use bytes::buf::{FromBuf};
+use protobuf::{parse_from_carllerche_bytes, Message, MessageStatic};
 use std::marker::PhantomData;
 
 pub trait MethodCodec {
@@ -10,11 +13,6 @@ pub trait MethodCodec {
     fn decode(&self, buf: Bytes) -> Result<Self::Request, Self::Error>;
 
     fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error>;
-}
-
-#[derive(Clone, Debug)]
-pub enum ProtobufCodecError {
-    UnknownError,
 }
 
 #[derive(Clone)]
@@ -32,18 +30,19 @@ impl<T, U> ProtobufCodec<T, U> {
 
 impl<T, U> MethodCodec for ProtobufCodec<T, U>
 where
-    T: Message,
+    T: Message + MessageStatic,
     U: Message,
 {
     type Request = T;
     type Response = U;
-    type Error = ProtobufCodecError;
+    type Error = ProtobufError;
 
     fn decode(&self, buf: Bytes) -> Result<Self::Request, Self::Error> {
-        unimplemented!()
+        parse_from_carllerche_bytes(&buf)
     }
 
     fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error> {
-        unimplemented!()
+        let buf = msg.write_to_bytes()?;
+        Ok(Bytes::from_buf(buf))
     }
 }

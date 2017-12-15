@@ -3,6 +3,7 @@ syntax = "proto3";
 message RpcMeta {
     RpcRequestMeta request = 1;
     RpcResponseMeta response = 2;
+    uint64 correlation_id = 4;
 }
 
 message RpcRequestMeta {

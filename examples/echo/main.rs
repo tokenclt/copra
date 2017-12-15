@@ -1,4 +1,5 @@
 extern crate caper;
+extern crate env_logger;
 extern crate futures;
 extern crate protobuf;
 extern crate tokio_core;
@@ -156,6 +157,8 @@ impl EchoService for Echo {
 
 
 fn main() {
+    env_logger::init().unwrap();
+
     let addr = "127.0.0.1:8989";
     let mut core = Core::new().unwrap();
     let handle = core.handle();
@@ -173,9 +176,13 @@ fn main() {
 
     thread::sleep_ms(100);
 
-    let (channel, backend) = core.run(ChannelBuilder::single_server(addr, handle, channel_option))
-        .unwrap();
-    core.execute(backend).unwrap();
+    let (channel, backend) = core.run(ChannelBuilder::single_server(
+        addr,
+        handle.clone(),
+        channel_option,
+    )).unwrap();
+
+    handle.spawn(backend);
 
     let echo = EchoStub::new(&channel);
 
@@ -183,9 +190,20 @@ fn main() {
         let mut request = EchoRequest::new();
         request.set_msg(format!("hello from the other side, time {}", i));
 
-        let (response, _) = echo.echo(request.clone()).wait().unwrap();
-        println!("Client received: {}", response.get_msg());
-        let (response, _) = echo.rev_echo(request).wait().unwrap();
-        println!("Client received: {}", response.get_msg());
+        let fut = echo.echo(request.clone())
+            .map_err(move |_| println!("Request {} failed", i))
+            .and_then(|(msg, _)| {
+                println!("Client received: {}", msg.get_msg());
+                Ok(())
+            });
+        core.run(fut).unwrap();
+
+        let fut = echo.rev_echo(request)
+            .map_err(move |_| println!("Request {} failed", i))
+            .and_then(|(msg, _)| {
+                println!("Client received: {}", msg.get_msg());
+                Ok(())
+            });
+        core.run(fut).unwrap();
     }
 }

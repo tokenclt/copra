@@ -26,6 +26,7 @@ pub struct RpcMeta {
     // message fields
     pub request: ::protobuf::SingularPtrField<RpcRequestMeta>,
     pub response: ::protobuf::SingularPtrField<RpcResponseMeta>,
+    pub correlation_id: u64,
     // special fields
     unknown_fields: ::protobuf::UnknownFields,
     cached_size: ::protobuf::CachedSize,
@@ -130,6 +131,29 @@ impl RpcMeta {
     fn mut_response_for_reflect(&mut self) -> &mut ::protobuf::SingularPtrField<RpcResponseMeta> {
         &mut self.response
     }
+
+    // uint64 correlation_id = 4;
+
+    pub fn clear_correlation_id(&mut self) {
+        self.correlation_id = 0;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_correlation_id(&mut self, v: u64) {
+        self.correlation_id = v;
+    }
+
+    pub fn get_correlation_id(&self) -> u64 {
+        self.correlation_id
+    }
+
+    fn get_correlation_id_for_reflect(&self) -> &u64 {
+        &self.correlation_id
+    }
+
+    fn mut_correlation_id_for_reflect(&mut self) -> &mut u64 {
+        &mut self.correlation_id
+    }
 }
 
 impl ::protobuf::Message for RpcMeta {
@@ -157,6 +181,13 @@ impl ::protobuf::Message for RpcMeta {
                 2 => {
                     ::protobuf::rt::read_singular_message_into(wire_type, is, &mut self.response)?;
                 },
+                4 => {
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_uint64()?;
+                    self.correlation_id = tmp;
+                },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
                 },
@@ -177,6 +208,9 @@ impl ::protobuf::Message for RpcMeta {
             let len = v.compute_size();
             my_size += 1 + ::protobuf::rt::compute_raw_varint32_size(len) + len;
         }
+        if self.correlation_id != 0 {
+            my_size += ::protobuf::rt::value_size(4, self.correlation_id, ::protobuf::wire_format::WireTypeVarint);
+        }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
         my_size
@@ -192,6 +226,9 @@ impl ::protobuf::Message for RpcMeta {
             os.write_tag(2, ::protobuf::wire_format::WireTypeLengthDelimited)?;
             os.write_raw_varint32(v.get_cached_size())?;
             v.write_to_with_cached_sizes(os)?;
+        }
+        if self.correlation_id != 0 {
+            os.write_uint64(4, self.correlation_id)?;
         }
         os.write_unknown_fields(self.get_unknown_fields())?;
         ::std::result::Result::Ok(())
@@ -247,6 +284,11 @@ impl ::protobuf::MessageStatic for RpcMeta {
                     RpcMeta::get_response_for_reflect,
                     RpcMeta::mut_response_for_reflect,
                 ));
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeUint64>(
+                    "correlation_id",
+                    RpcMeta::get_correlation_id_for_reflect,
+                    RpcMeta::mut_correlation_id_for_reflect,
+                ));
                 ::protobuf::reflect::MessageDescriptor::new::<RpcMeta>(
                     "RpcMeta",
                     fields,
@@ -261,6 +303,7 @@ impl ::protobuf::Clear for RpcMeta {
     fn clear(&mut self) {
         self.clear_request();
         self.clear_response();
+        self.clear_correlation_id();
         self.unknown_fields.clear();
     }
 }
@@ -766,14 +809,15 @@ impl ::protobuf::reflect::ProtobufValue for RpcResponseMeta {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\x16src/message/meta.proto\"b\n\x07RpcMeta\x12)\n\x07request\x18\x01\
-    \x20\x01(\x0b2\x0f.RpcRequestMetaR\x07request\x12,\n\x08response\x18\x02\
-    \x20\x01(\x0b2\x10.RpcResponseMetaR\x08response\"k\n\x0eRpcRequestMeta\
-    \x12!\n\x0cservice_name\x18\x01\x20\x01(\tR\x0bserviceName\x12\x1f\n\x0b\
-    method_name\x18\x02\x20\x01(\tR\nmethodName\x12\x15\n\x06log_id\x18\x03\
-    \x20\x01(\x03R\x05logId\"O\n\x0fRpcResponseMeta\x12\x1d\n\nerror_code\
-    \x18\x01\x20\x01(\x05R\terrorCode\x12\x1d\n\nerror_text\x18\x02\x20\x01(\
-    \tR\terrorTextb\x06proto3\
+    \n\x16src/message/meta.proto\"\x89\x01\n\x07RpcMeta\x12)\n\x07request\
+    \x18\x01\x20\x01(\x0b2\x0f.RpcRequestMetaR\x07request\x12,\n\x08response\
+    \x18\x02\x20\x01(\x0b2\x10.RpcResponseMetaR\x08response\x12%\n\x0ecorrel\
+    ation_id\x18\x04\x20\x01(\x04R\rcorrelationId\"k\n\x0eRpcRequestMeta\x12\
+    !\n\x0cservice_name\x18\x01\x20\x01(\tR\x0bserviceName\x12\x1f\n\x0bmeth\
+    od_name\x18\x02\x20\x01(\tR\nmethodName\x12\x15\n\x06log_id\x18\x03\x20\
+    \x01(\x03R\x05logId\"O\n\x0fRpcResponseMeta\x12\x1d\n\nerror_code\x18\
+    \x01\x20\x01(\x05R\terrorCode\x12\x1d\n\nerror_text\x18\x02\x20\x01(\tR\
+    \terrorTextb\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {
