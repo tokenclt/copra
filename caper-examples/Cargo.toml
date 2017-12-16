@@ -1,0 +1,17 @@
+[package]
+name = "caper-examples"
+version = "0.0.0"
+authors = ["AprliRainkun <zmy.2347@sjtu.edu.cn>"]
+
+[dependencies]
+caper = { path = "../caper" }
+
+[build-dependencies]
+protoc-rust-caper = { path = "../protoc-rust-caper" }
+
+[lib]
+doctest = false
+test = false
+
+[[bin]]
+name = "echo"

@@ -1,7 +1,0 @@
-[package]
-name = "caper-compiler"
-version = "0.1.0"
-authors = ["AprliRainkun <zmy.2347@sjtu.edu.cn>"]
-
-[dependencies]
-protobuf = {version = "1.4", features = ["with-bytes"]}

@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "caper",
-    "caper-compiler"
+    "protoc-rust-caper",
+    "caper-examples",
 ]

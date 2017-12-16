@@ -16,10 +16,3 @@ smallvec = "0.5"
 
 [build-dependencies]
 protoc-rust = "1.4"
-
-[dev_dependencies]
-env_logger = "0.4"
-
-[[example]]
-name = "echo"
-path = "examples/echo/main.rs"
