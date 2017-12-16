@@ -1,0 +1,25 @@
+[package]
+name = "caper"
+version = "0.1.0"
+authors = ["AprliRainkun <zmy.2347@sjtu.edu.cn>"]
+
+[dependencies]
+bytes = "0.4"
+futures = "0.1"
+log = "0.3"
+tokio-io = "0.1"
+tokio-core = "0.1"
+tokio-proto = "0.1"
+tokio-service = "0.1"
+protobuf = {version = "1.4", features = ["with-bytes"]}
+smallvec = "0.5"
+
+[build-dependencies]
+protoc-rust = "1.4"
+
+[dev_dependencies]
+env_logger = "0.4"
+
+[[example]]
+name = "echo"
+path = "examples/echo/main.rs"
