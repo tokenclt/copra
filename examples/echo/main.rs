@@ -33,36 +33,6 @@ pub trait EchoService {
     fn rev_echo(&self, msg: EchoRequest) -> Self::RevEchoFuture;
 }
 
-#[allow(non_camel_case_types)]
-#[derive(Clone)]
-struct EchoEchoWrapper__<S: Clone>(S);
-
-impl<S: EchoService + Clone> Service for EchoEchoWrapper__<S> {
-    type Request = EchoRequest;
-    type Response = EchoResponse;
-    type Error = MethodError;
-    type Future = <S as EchoService>::EchoFuture;
-
-    fn call(&self, req: Self::Request) -> Self::Future {
-        self.0.echo(req)
-    }
-}
-
-#[allow(non_camel_case_types)]
-#[derive(Clone)]
-struct EchoRevEchoWrapper__<S: Clone>(S);
-
-impl<S: EchoService + Clone> Service for EchoRevEchoWrapper__<S> {
-    type Request = EchoRequest;
-    type Response = EchoResponse;
-    type Error = MethodError;
-    type Future = <S as EchoService>::RevEchoFuture;
-
-    fn call(&self, req: Self::Request) -> Self::Future {
-        self.0.rev_echo(req)
-    }
-}
-
 pub struct EchoRegistrant<S> {
     provider: S,
 }
@@ -81,19 +51,57 @@ where
         let mut entries = vec![];
         let provider = &self.provider;
 
-        let wrap = EchoEchoWrapper__(provider.clone());
-        let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
-        entries.push((
-            "echo".to_string(),
-            Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
-        ));
+        {
+            #[derive(Clone)]
+            struct Wrapper<S: Clone>(S);
 
-        let wrap = EchoRevEchoWrapper__(provider.clone());
-        let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
-        entries.push((
-            "rev_echo".to_string(),
-            Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
-        ));
+            impl<S> Service for Wrapper<S>
+            where
+                S: EchoService + Clone,
+            {
+                type Request = EchoRequest;
+                type Response = EchoResponse;
+                type Error = MethodError;
+                type Future = <S as EchoService>::EchoFuture;
+
+                fn call(&self, req: Self::Request) -> Self::Future {
+                    self.0.echo(req)
+                }
+            }
+
+            let wrap = Wrapper(provider.clone());
+            let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
+            entries.push((
+                "echo".to_string(),
+                Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
+            ));
+        }
+
+        {
+            #[derive(Clone)]
+            struct Wrapper<S: Clone>(S);
+
+            impl<S> Service for Wrapper<S>
+            where
+                S: EchoService + Clone,
+            {
+                type Request = EchoRequest;
+                type Response = EchoResponse;
+                type Error = MethodError;
+                type Future = <S as EchoService>::RevEchoFuture;
+
+                fn call(&self, req: Self::Request) -> Self::Future {
+                    self.0.rev_echo(req)
+                }
+            }
+
+            let wrap = Wrapper(provider.clone());
+            let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
+            entries.push((
+                "rev_echo".to_string(),
+                Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
+            ));
+        }
 
         entries
     }
