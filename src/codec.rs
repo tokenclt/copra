@@ -1,7 +1,7 @@
 pub use protobuf::ProtobufError;
 
 use bytes::Bytes;
-use bytes::buf::{FromBuf};
+use bytes::buf::FromBuf;
 use protobuf::{parse_from_carllerche_bytes, Message, MessageStatic};
 use std::marker::PhantomData;
 
@@ -38,11 +38,17 @@ where
     type Error = ProtobufError;
 
     fn decode(&self, buf: Bytes) -> Result<Self::Request, Self::Error> {
-        parse_from_carllerche_bytes(&buf)
+        parse_from_carllerche_bytes(&buf).map_err(|e| {
+            error!("Failed to decode protobuf message from body");
+            e
+        })
     }
 
     fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error> {
-        let buf = msg.write_to_bytes()?;
+        let buf = msg.write_to_bytes().map_err(|e| {
+            error!("Failed to encode protobuf message");
+            e
+        })?;
         Ok(Bytes::from_buf(buf))
     }
 }

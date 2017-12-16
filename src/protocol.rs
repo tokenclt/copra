@@ -40,7 +40,7 @@ pub trait RpcProtocol: Sync + Send {
     fn try_parse(
         &mut self,
         buf: &mut BytesMut,
-    ) -> Result<(RequestId, RequestPackage), ProtocolError>;
+    ) -> Result<(RequestId, (RpcMeta, Bytes)), ProtocolError>;
 
     fn box_clone(&self) -> Box<RpcProtocol>;
 
@@ -64,7 +64,7 @@ impl RpcProtocol for BrpcProtocol {
     fn try_parse(
         &mut self,
         buf: &mut BytesMut,
-    ) -> Result<(RequestId, RequestPackage), ProtocolError> {
+    ) -> Result<(RequestId, (RpcMeta, Bytes)), ProtocolError> {
         loop {
             match self.state {
                 BrpcParseState::ReadingHeader => {
@@ -92,16 +92,13 @@ impl RpcProtocol for BrpcProtocol {
                     if buf.len() < pkg_len as usize {
                         return Err(ProtocolError::NeedMoreBytes);
                     }
-                    let mut meta = parse_from_carllerche_bytes::<RpcMeta>(&buf.split_to(
+                    let meta = parse_from_carllerche_bytes::<RpcMeta>(&buf.split_to(
                         meta_len as usize,
                     ).freeze())
                         .map_err(|_| ProtocolError::AbsolutelyWrong)?;
-                    if !meta.has_request() {
-                        return Err(ProtocolError::AbsolutelyWrong);
-                    }
                     let body = buf.split_to((pkg_len - meta_len) as usize).freeze();
                     self.state = BrpcParseState::ReadingHeader;
-                    return Ok((meta.get_correlation_id(), (meta.take_request(), body)));
+                    return Ok((meta.get_correlation_id(), (meta, body)));
                 }
             }
         }
@@ -139,7 +136,7 @@ impl RpcProtocol for HttpProtocol {
     fn try_parse(
         &mut self,
         buf: &mut BytesMut,
-    ) -> Result<(RequestId, RequestPackage), ProtocolError> {
+    ) -> Result<(RequestId, (RpcMeta, Bytes)), ProtocolError> {
         unimplemented!()
     }
 
@@ -177,9 +174,16 @@ impl Decoder for ProtoCodec {
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         loop {
             match self.schemes[self.cached_scheme].try_parse(buf) {
-                Ok(item) => {
+                Ok((id, (mut meta, body))) => {
                     self.tried_num = 0;
-                    return Ok(Some(item));
+                    if !meta.has_request() {
+                        warn!("Request package do not have request field");
+                        return Err(io::Error::new(
+                            io::ErrorKind::Other,
+                            "Request package do not have request field",
+                        ));
+                    }
+                    return Ok(Some((id, (meta.take_request(), body))));
                 }
                 Err(ProtocolError::NeedMoreBytes) => return Ok(None),
                 Err(ProtocolError::TryOthers) => {
@@ -187,6 +191,7 @@ impl Decoder for ProtoCodec {
                     self.tried_num += 1;
                     if self.tried_num >= self.schemes.len() as i32 {
                         self.tried_num = 0;
+                        warn!("No protocol recognize this package");
                         return Err(io::Error::new(
                             io::ErrorKind::Other,
                             "No protocol recognize this package",
@@ -194,7 +199,8 @@ impl Decoder for ProtoCodec {
                     }
                 }
                 Err(ProtocolError::AbsolutelyWrong) => {
-                    return Err(io::Error::new(io::ErrorKind::Other, "Invalid package"))
+                    warn!("Invalid request package");
+                    return Err(io::Error::new(io::ErrorKind::Other, "Invalid package"));
                 }
             }
         }
@@ -206,10 +212,14 @@ impl Encoder for ProtoCodec {
     type Error = io::Error;
 
     fn encode(&mut self, msg: Self::Item, buf: &mut BytesMut) -> Result<(), Self::Error> {
-        unimplemented!()
+        let scheme = &self.schemes[self.cached_scheme];
+        let (id, (resp_meta, body)) = msg;
+        let mut meta = RpcMeta::new();
+        meta.set_response(resp_meta);
+        meta.set_correlation_id(id);
+        scheme.write_package((meta, body), buf)
     }
 }
-
 
 pub struct ProtoCodecClient {
     scheme: Box<RpcProtocol>,
@@ -226,7 +236,25 @@ impl Decoder for ProtoCodecClient {
     type Error = io::Error;
 
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        unimplemented!()
+        match self.scheme.try_parse(buf) {
+            Ok((id, (mut meta, body))) => {
+                if !meta.has_response() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::Other,
+                        "Response package do not have response field",
+                    ));
+                }
+                return Ok(Some((id, (meta.take_response(), body))));
+            }
+            Err(ProtocolError::NeedMoreBytes) => return Ok(None),
+            Err(ProtocolError::TryOthers) | Err(ProtocolError::AbsolutelyWrong) => {
+                error!("Decode response package failed, invalid package or wrong protocol");
+                return Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "Invalid package or wrong protocol",
+                ));
+            }
+        }
     }
 }
 

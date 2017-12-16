@@ -1,10 +1,11 @@
 use bytes::{Bytes, BytesMut};
-use futures::Future;
-use protobuf::Message;
+use futures::{Future, IntoFuture};
+use protobuf::{parse_from_carllerche_bytes, Message, MessageStatic};
 use std::marker::PhantomData;
 use std::error;
 use std::io;
 use tokio_service::{NewService, Service};
+use std::sync::Arc;
 
 use codec::{MethodCodec, ProtobufError};
 use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
@@ -85,14 +86,18 @@ pub struct EncapsulatedMethod<C, S> {
 
 impl<C, S> EncapsulatedMethod<C, S> where {
     pub fn new(codec: C, method: S) -> Self {
-        EncapsulatedMethod { codec, method }
+        EncapsulatedMethod {
+            codec: codec,
+            method: method,
+        }
     }
 }
 
 impl<C, S> Service for EncapsulatedMethod<C, S>
 where
-    C: MethodCodec<Request = S::Request, Response = S::Response>,
-    S: Service + Send + Sync,
+    C: MethodCodec<Request = S::Request, Response = S::Response> + Clone + 'static,
+    MethodError: From<C::Error>,
+    S: Service + Clone + 'static,
 {
     type Request = Body;
     type Response = Body;
@@ -100,14 +105,28 @@ where
     type Future = MethodFuture;
 
     fn call(&self, req: Self::Request) -> Self::Future {
-        unimplemented!()
+        let codec = self.codec.clone();
+        let method = self.method.clone();
+
+        let fut = codec
+            .decode(req)
+            .map_err(|e| e.into())
+            .into_future()
+            .and_then(move |req| {
+                method
+                    .call(req)
+                    .map_err(|_| MethodError::UnknownError)
+                    .and_then(move |resp| codec.encode(resp).map_err(|e| e.into()))
+            });
+        Box::new(fut)
     }
 }
 
 impl<C, S> NewService for EncapsulatedMethod<C, S>
 where
-    C: MethodCodec<Request = S::Request, Response = S::Response> + Clone,
-    S: Service + Clone + Send + Sync,
+    C: MethodCodec<Request = S::Request, Response = S::Response> + Clone + 'static,
+    MethodError: From<C::Error>,
+    S: Service + Clone + 'static,
 {
     type Request = Body;
     type Response = Body;
@@ -115,9 +134,9 @@ where
     type Instance = Self;
 
     fn new_service(&self) -> io::Result<Self::Instance> {
-        Ok(EncapsulatedMethod::new(
-            self.codec.clone(),
-            self.method.clone(),
-        ))
+        Ok(EncapsulatedMethod {
+            codec: self.codec.clone(),
+            method: self.method.clone(),
+        })
     }
 }

@@ -142,7 +142,7 @@ impl Channel {
             .unbounded_send((tx, req))
             .map_err(|_| panic!("The receiving end of the mpsc is dropped."))
             .into_future()
-            .and_then(|_| {debug!("Request sent through channel"); rx})
+            .and_then(|_| rx)
             // TODO: maybe ignore this.
             // refering to request cancelation.
             .map_err(|_| panic!("The sending end of the oneshot is dropped"))

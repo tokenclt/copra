@@ -63,6 +63,7 @@ fn errno_to_result(result: io::Result<ResponsePackage>) -> Result<Bytes, MethodE
             if error_code == 0 {
                 Ok(body)
             } else {
+                error!("Server mark rpc to failed");
                 Err(MethodError::UnknownError)
             }
         })

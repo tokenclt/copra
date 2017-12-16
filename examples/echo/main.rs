@@ -170,7 +170,7 @@ fn main() {
     };
     let channel_option = ChannelOption::new();
     thread::spawn(move || {
-        let server = Server::new(addr, server_option);
+        let server = Server::new(addr, server_option, registry);
         server.start();
     });
 
@@ -191,7 +191,7 @@ fn main() {
         request.set_msg(format!("hello from the other side, time {}", i));
 
         let fut = echo.echo(request.clone())
-            .map_err(move |_| println!("Request {} failed", i))
+            .map_err(move |e| println!("Request {} failed with {:?}", i, e))
             .and_then(|(msg, _)| {
                 println!("Client received: {}", msg.get_msg());
                 Ok(())
@@ -199,7 +199,7 @@ fn main() {
         core.run(fut).unwrap();
 
         let fut = echo.rev_echo(request)
-            .map_err(move |_| println!("Request {} failed", i))
+            .map_err(move |e| println!("Request {} failed with {:?}", i, e))
             .and_then(|(msg, _)| {
                 println!("Client received: {}", msg.get_msg());
                 Ok(())

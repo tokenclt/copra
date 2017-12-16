@@ -53,6 +53,7 @@ where
     type BindTransport = Result<Self::Transport, io::Error>;
 
     fn bind_transport(&self, io: T) -> Self::BindTransport {
+        debug!("New connection established");
         let codec = ProtoCodec::new(self.protocols.as_slice());
         Ok(io.framed(codec))
     }
@@ -83,6 +84,13 @@ impl Service for MetaService {
             self.registry
                 .get_method(service_name, method_name)
                 .ok_or(MethodError::UnknownError)
+                .map_err(|e| {
+                    warn!(
+                        "Requested method {}::{} is not found",
+                        service_name, method_name
+                    );
+                    e
+                })
                 .into_future()
         };
         let response = service
@@ -112,12 +120,12 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(addr: &str, option: ServerOption) -> Self {
+    pub fn new(addr: &str, option: ServerOption, registry: ServiceRegistry) -> Self {
         let socket_addr = addr.parse().expect("Parse listening addr failed");
         let server = TcpServer::new(MetaServerProtocol::new(&option), socket_addr);
         info!("Server listensing : {}", socket_addr);
         Server {
-            services: Arc::new(ServiceRegistry::new()),
+            services: Arc::new(registry),
             listener: server,
         }
     }
