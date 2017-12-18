@@ -1,4 +1,5 @@
 extern crate caper;
+extern crate caper_examples;
 extern crate env_logger;
 extern crate futures;
 extern crate protobuf;
@@ -12,126 +13,15 @@ use std::thread;
 use std::time::Duration;
 use tokio_service::{NewService, Service};
 use tokio_core::reactor::Core;
-use message::{EchoRequest, EchoResponse};
-use caper::service::{EncapsulatedMethod, MethodError, NewEncapService, NewEncapsulatedMethod};
 use caper::dispatcher::{Registrant, ServiceRegistry};
-use caper::codec::{MethodCodec, ProtobufCodec};
+use caper::service::MethodError;
 use caper::channel::{Channel, ChannelBuilder, ChannelOption};
 use caper::stub::{RpcWrapper, StubCallFuture};
 use caper::server::{Server, ServerOption};
 use caper::protocol::Protocol;
-use protobuf::Message;
 
-mod message;
-
-pub trait EchoService {
-    type EchoFuture: Future<Item = EchoResponse, Error = MethodError> + 'static;
-    type RevEchoFuture: Future<Item = EchoResponse, Error = MethodError> + 'static;
-
-    fn echo(&self, msg: EchoRequest) -> Self::EchoFuture;
-
-    fn rev_echo(&self, msg: EchoRequest) -> Self::RevEchoFuture;
-}
-
-pub struct EchoRegistrant<S> {
-    provider: S,
-}
-
-impl<S> EchoRegistrant<S> {
-    pub fn new(provider: S) -> Self {
-        EchoRegistrant { provider }
-    }
-}
-
-impl<S> Registrant for EchoRegistrant<S>
-where
-    S: EchoService + Clone + Send + Sync + 'static,
-{
-    fn methods(&self) -> Vec<(String, NewEncapService)> {
-        let mut entries = vec![];
-        let provider = &self.provider;
-
-        {
-            #[derive(Clone)]
-            struct Wrapper<S: Clone>(S);
-
-            impl<S> Service for Wrapper<S>
-            where
-                S: EchoService + Clone,
-            {
-                type Request = EchoRequest;
-                type Response = EchoResponse;
-                type Error = MethodError;
-                type Future = <S as EchoService>::EchoFuture;
-
-                fn call(&self, req: Self::Request) -> Self::Future {
-                    self.0.echo(req)
-                }
-            }
-
-            let wrap = Wrapper(provider.clone());
-            let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
-            entries.push((
-                "echo".to_string(),
-                Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
-            ));
-        }
-
-        {
-            #[derive(Clone)]
-            struct Wrapper<S: Clone>(S);
-
-            impl<S> Service for Wrapper<S>
-            where
-                S: EchoService + Clone,
-            {
-                type Request = EchoRequest;
-                type Response = EchoResponse;
-                type Error = MethodError;
-                type Future = <S as EchoService>::RevEchoFuture;
-
-                fn call(&self, req: Self::Request) -> Self::Future {
-                    self.0.rev_echo(req)
-                }
-            }
-
-            let wrap = Wrapper(provider.clone());
-            let method = EncapsulatedMethod::new(ProtobufCodec::new(), wrap);
-            entries.push((
-                "rev_echo".to_string(),
-                Box::new(NewEncapsulatedMethod::new(method)) as NewEncapService,
-            ));
-        }
-
-        entries
-    }
-}
-
-#[derive(Clone)]
-pub struct EchoStub<'a> {
-    echo_wrapper: RpcWrapper<'a, ProtobufCodec<EchoResponse, EchoRequest>>,
-    rev_echo_wrapper: RpcWrapper<'a, ProtobufCodec<EchoResponse, EchoRequest>>,
-}
-
-impl<'a> EchoStub<'a> {
-    pub fn new(channel: &'a Channel) -> Self {
-        EchoStub {
-            echo_wrapper: RpcWrapper::new(ProtobufCodec::new(), channel),
-            rev_echo_wrapper: RpcWrapper::new(ProtobufCodec::new(), channel),
-        }
-    }
-
-    pub fn echo(&'a self, msg: EchoRequest) -> StubCallFuture<'a, EchoResponse> {
-        self.echo_wrapper
-            .call((msg, "Echo".to_string(), "echo".to_string()))
-    }
-
-    pub fn rev_echo(&'a self, msg: EchoRequest) -> StubCallFuture<'a, EchoResponse> {
-        self.rev_echo_wrapper
-            .call((msg, "Echo".to_string(), "rev_echo".to_string()))
-    }
-}
-
+use caper_examples::protos::echo::{EchoRequest, EchoResponse};
+use caper_examples::protos::echo_caper::{EchoService, EchoStub, EchoRegistrant};
 
 // user visible from here
 

@@ -376,7 +376,9 @@ impl ::protobuf::reflect::ProtobufValue for EchoResponse {
 static file_descriptor_proto_data: &'static [u8] = b"\
     \n\x15src/protos/echo.proto\"\x1f\n\x0bEchoRequest\x12\x10\n\x03msg\x18\
     \x01\x20\x01(\tR\x03msg\"\x20\n\x0cEchoResponse\x12\x10\n\x03msg\x18\x01\
-    \x20\x01(\tR\x03msgb\x06proto3\
+    \x20\x01(\tR\x03msg2T\n\x04Echo\x12#\n\x04echo\x12\x0c.EchoRequest\x1a\r\
+    .EchoResponse\x12'\n\x08rev_echo\x12\x0c.EchoRequest\x1a\r.EchoResponseb\
+    \x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["AprliRainkun <zmy.2347@sjtu.edu.cn>"]
 
 [dependencies]
-inflector = "0.11"
+Inflector = "0.11"
 protoc = "1.4"
 protoc-rust = "1.4"
 protobuf = {version = "1.4", features = ["with-bytes"]}

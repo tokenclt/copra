@@ -1,3 +1,5 @@
+#![recursion_limit="256"]
+
 extern crate inflector;
 extern crate protobuf;
 extern crate protoc;

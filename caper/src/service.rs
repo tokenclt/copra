@@ -4,11 +4,13 @@ use protobuf::{parse_from_carllerche_bytes, Message, MessageStatic};
 use std::marker::PhantomData;
 use std::error;
 use std::io;
-use tokio_service::{NewService, Service};
+use tokio_service::{NewService};
 use std::sync::Arc;
 
 use codec::{MethodCodec, ProtobufError};
 use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
+
+pub use tokio_service::Service;
 
 type StdError = error::Error;
 

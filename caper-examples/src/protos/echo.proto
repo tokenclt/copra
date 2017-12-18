@@ -7,3 +7,8 @@ message EchoRequest {
 message EchoResponse {
     string msg = 1;
 }
+
+service Echo {
+    rpc echo(EchoRequest) returns (EchoResponse);
+    rpc rev_echo(EchoRequest) returns (EchoResponse);
+}
