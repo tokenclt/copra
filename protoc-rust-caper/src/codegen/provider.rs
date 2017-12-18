@@ -22,7 +22,10 @@ pub fn generate_service_trait(
         gen = gen
             + &format!(
                 r"
-    type {}: ::futures::Future<Item = {}, Error = ::caper::service::MethodError> + 'static;
+    type {}: ::futures::Future<
+        Item = ({}, ::caper::controller::Controller), 
+        Error = ::caper::service::MethodError,
+    > + 'static;
 
 ",
                 future, resp
@@ -37,7 +40,7 @@ pub fn generate_service_trait(
         gen = gen
             + &format!(
                 r"
-    fn {}(&self, msg: {}) -> Self::{};
+    fn {}(&self, msg: ({}, ::caper::controller::Controller)) -> Self::{};
 
 ",
                 method, req, future
@@ -117,8 +120,8 @@ where
             where
                 S: {} + Clone,
             {{
-                type Request = {};
-                type Response = {};
+                type Request = ({}, ::caper::controller::Controller);
+                type Response = ({}, ::caper::controller::Controller);
                 type Error = ::caper::service::MethodError;
                 type Future = <S as {}>::{};
 

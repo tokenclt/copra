@@ -1,20 +1,26 @@
 use bytes::{BigEndian, Buf, BufMut, Bytes, BytesMut};
 use futures::{future, Future};
 use std::io;
+use std::str;
+use std::collections::HashMap;
 use smallvec::SmallVec;
 use tokio_io::codec::{Decoder, Encoder};
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::Framed;
 use tokio_proto::multiplex::{ClientProto, RequestId, ServerProto};
+use httparse::Header as HttpHeader;
+use httparse::Request as HttpRequest;
+use httparse::Error as HttpParseError;
+use httparse::Status;
+use httparse;
 use protobuf::{parse_from_carllerche_bytes, Message};
 
+use controller::Controller;
 use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
+use message::{RequestPackage, ResponsePackage};
 
 static HEADER: &[u8] = b"PRPC";
 
-type RequestPackage = (RpcRequestMeta, Bytes);
-
-type ResponsePackage = (RpcResponseMeta, Bytes);
 // Abstract over every protocols
 
 #[derive(Clone, Debug)]
@@ -40,11 +46,15 @@ pub trait RpcProtocol: Sync + Send {
     fn try_parse(
         &mut self,
         buf: &mut BytesMut,
-    ) -> Result<(RequestId, (RpcMeta, Bytes)), ProtocolError>;
+    ) -> Result<(RequestId, (RpcMeta, Controller, Bytes)), ProtocolError>;
 
     fn box_clone(&self) -> Box<RpcProtocol>;
 
-    fn write_package(&self, meta: (RpcMeta, Bytes), buf: &mut BytesMut) -> io::Result<()>;
+    fn write_package(
+        &self,
+        meta: (RpcMeta, Controller, Bytes),
+        buf: &mut BytesMut,
+    ) -> io::Result<()>;
 }
 
 #[derive(Clone)]
@@ -64,7 +74,7 @@ impl RpcProtocol for BrpcProtocol {
     fn try_parse(
         &mut self,
         buf: &mut BytesMut,
-    ) -> Result<(RequestId, (RpcMeta, Bytes)), ProtocolError> {
+    ) -> Result<(RequestId, (RpcMeta, Controller, Bytes)), ProtocolError> {
         loop {
             match self.state {
                 BrpcParseState::ReadingHeader => {
@@ -98,7 +108,10 @@ impl RpcProtocol for BrpcProtocol {
                         .map_err(|_| ProtocolError::AbsolutelyWrong)?;
                     let body = buf.split_to((pkg_len - meta_len) as usize).freeze();
                     self.state = BrpcParseState::ReadingHeader;
-                    return Ok((meta.get_correlation_id(), (meta, body)));
+                    return Ok((
+                        meta.get_correlation_id(),
+                        (meta, Controller::default(), body),
+                    ));
                 }
             }
         }
@@ -108,8 +121,12 @@ impl RpcProtocol for BrpcProtocol {
         Box::new(self.clone())
     }
 
-    fn write_package(&self, meta: (RpcMeta, Bytes), buf: &mut BytesMut) -> io::Result<()> {
-        let (meta, body) = meta;
+    fn write_package(
+        &self,
+        meta: (RpcMeta, Controller, Bytes),
+        buf: &mut BytesMut,
+    ) -> io::Result<()> {
+        let (meta, _, body) = meta;
         let meta_len = meta.compute_size();
         let body_len = body.len() as u32;
 
@@ -130,21 +147,117 @@ impl RpcProtocol for BrpcProtocol {
 }
 
 #[derive(Clone)]
-pub struct HttpProtocol;
+enum HttpParseState {
+    ReadingHeader,
+    /// (header length, content length, controller)
+    ReadingContent(usize, usize, RpcMeta, Controller),
+}
+
+#[derive(Clone)]
+pub struct HttpProtocol {
+    state: HttpParseState,
+}
+
+impl HttpProtocol {
+    pub fn new() -> Self {
+        HttpProtocol {
+            state: HttpParseState::ReadingHeader,
+        }
+    }
+
+    fn parse_name(&self, path: &str) -> Result<(String, String), ProtocolError> {
+        unimplemented!()
+    }
+}
 
 impl RpcProtocol for HttpProtocol {
     fn try_parse(
         &mut self,
         buf: &mut BytesMut,
-    ) -> Result<(RequestId, (RpcMeta, Bytes)), ProtocolError> {
-        unimplemented!()
+    ) -> Result<(RequestId, (RpcMeta, Controller, Bytes)), ProtocolError> {
+        loop {
+            match self.state {
+                HttpParseState::ReadingHeader => {
+                    let mut headers = [httparse::EMPTY_HEADER; 10];
+                    let mut req = HttpRequest::new(&mut headers);
+                    match req.parse(buf) {
+                        Ok(Status::Complete(header_len)) => {
+                            let mut controller = Controller::default();
+                            let mut header_map = HashMap::new();
+                            let mut request_meta = RpcRequestMeta::new();
+                            let mut meta = RpcMeta::new();
+
+                            for header in req.headers {
+                                let val = str::from_utf8(header.value)
+                                    .map_err(|_| ProtocolError::AbsolutelyWrong)?;
+                                header_map.insert(header.name.to_string(), val.to_string());
+                            }
+
+                            let path = req.path.ok_or(ProtocolError::AbsolutelyWrong)?;
+                            let id = header_map
+                                .get("Correlation-Id")
+                                .ok_or(ProtocolError::AbsolutelyWrong)
+                                .and_then(|s| {
+                                    s.parse().map_err(|_| ProtocolError::AbsolutelyWrong)
+                                })?;
+                            let content_len = header_map
+                                .get("Content-Length")
+                                .ok_or(ProtocolError::AbsolutelyWrong)
+                                .and_then(|s| {
+                                    s.parse().map_err(|_| ProtocolError::AbsolutelyWrong)
+                                })?;
+                            controller.http_url = Some(path.to_string());
+                            controller.headers = header_map;
+
+                            let (service, method) = self.parse_name(path)?;
+                            request_meta.set_service_name(service);
+                            request_meta.set_method_name(method);
+
+                            meta.set_request(request_meta);
+                            meta.set_correlation_id(id);
+
+                            self.state = HttpParseState::ReadingContent(
+                                header_len,
+                                content_len,
+                                meta,
+                                controller,
+                            );
+                        }
+                        Ok(Status::Partial) => return Err(ProtocolError::NeedMoreBytes),
+                        Err(_) => return Err(ProtocolError::AbsolutelyWrong),
+                    }
+                }
+                HttpParseState::ReadingContent(header_len, content_len, ..) => {
+                    if buf.len() < (header_len + content_len) {
+                        return Err(ProtocolError::NeedMoreBytes);
+                    }
+
+                    let state = ::std::mem::replace(&mut self.state, HttpParseState::ReadingHeader);
+
+                    buf.split_to(header_len);
+
+                    if let HttpParseState::ReadingContent(.., meta, mut controller) = state {
+                        let body = buf.split_to(content_len as usize).freeze();
+                        controller.request_body = Vec::from(body.as_ref());
+                        self.state = HttpParseState::ReadingHeader;
+                        return Ok((meta.get_correlation_id(), (meta, controller, Bytes::new())));
+                    } else {
+                        unreachable!();
+                    }
+                }
+            }
+        }
     }
 
     fn box_clone(&self) -> Box<RpcProtocol> {
         Box::new(self.clone())
     }
 
-    fn write_package(&self, meta: (RpcMeta, Bytes), buf: &mut BytesMut) -> io::Result<()> {
+    fn write_package(
+        &self,
+        meta: (RpcMeta, Controller, Bytes),
+        buf: &mut BytesMut,
+    ) -> io::Result<()> {
         unimplemented!()
     }
 }
@@ -174,7 +287,7 @@ impl Decoder for ProtoCodec {
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         loop {
             match self.schemes[self.cached_scheme].try_parse(buf) {
-                Ok((id, (mut meta, body))) => {
+                Ok((id, (mut meta, controller, body))) => {
                     self.tried_num = 0;
                     if !meta.has_request() {
                         warn!("Request package do not have request field");
@@ -183,7 +296,7 @@ impl Decoder for ProtoCodec {
                             "Request package do not have request field",
                         ));
                     }
-                    return Ok(Some((id, (meta.take_request(), body))));
+                    return Ok(Some((id, (meta.take_request(), controller, body))));
                 }
                 Err(ProtocolError::NeedMoreBytes) => return Ok(None),
                 Err(ProtocolError::TryOthers) => {
@@ -213,11 +326,11 @@ impl Encoder for ProtoCodec {
 
     fn encode(&mut self, msg: Self::Item, buf: &mut BytesMut) -> Result<(), Self::Error> {
         let scheme = &self.schemes[self.cached_scheme];
-        let (id, (resp_meta, body)) = msg;
+        let (id, (resp_meta, controller, body)) = msg;
         let mut meta = RpcMeta::new();
         meta.set_response(resp_meta);
         meta.set_correlation_id(id);
-        scheme.write_package((meta, body), buf)
+        scheme.write_package((meta, controller, body), buf)
     }
 }
 
@@ -232,12 +345,12 @@ impl ProtoCodecClient {
 }
 
 impl Decoder for ProtoCodecClient {
-    type Item = (RequestId, ResponsePackage);
+    type Item = (RequestId, (RpcResponseMeta, Bytes));
     type Error = io::Error;
 
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         match self.scheme.try_parse(buf) {
-            Ok((id, (mut meta, body))) => {
+            Ok((id, (mut meta, _, body))) => {
                 if !meta.has_response() {
                     return Err(io::Error::new(
                         io::ErrorKind::Other,
@@ -259,7 +372,7 @@ impl Decoder for ProtoCodecClient {
 }
 
 impl Encoder for ProtoCodecClient {
-    type Item = (RequestId, RequestPackage);
+    type Item = (RequestId, (RpcRequestMeta, Bytes));
     type Error = io::Error;
 
     fn encode(&mut self, msg: Self::Item, buf: &mut BytesMut) -> Result<(), Self::Error> {
@@ -268,6 +381,7 @@ impl Encoder for ProtoCodecClient {
         meta.set_request(request_meta);
         meta.set_correlation_id(id);
 
-        self.scheme.write_package((meta, body), buf)
+        self.scheme
+            .write_package((meta, Controller::default(), body), buf)
     }
 }

@@ -5,16 +5,22 @@
 #![allow(dead_code)]
 
 pub trait EchoService {
-    type EchoFuture: ::futures::Future<Item = super::echo::EchoResponse, Error = ::caper::service::MethodError> + 'static;
+    type EchoFuture: ::futures::Future<
+        Item = (super::echo::EchoResponse, ::caper::controller::Controller), 
+        Error = ::caper::service::MethodError,
+    > + 'static;
 
 
-    type RevEchoFuture: ::futures::Future<Item = super::echo::EchoResponse, Error = ::caper::service::MethodError> + 'static;
+    type RevEchoFuture: ::futures::Future<
+        Item = (super::echo::EchoResponse, ::caper::controller::Controller), 
+        Error = ::caper::service::MethodError,
+    > + 'static;
 
 
-    fn echo(&self, msg: super::echo::EchoRequest) -> Self::EchoFuture;
+    fn echo(&self, msg: (super::echo::EchoRequest, ::caper::controller::Controller)) -> Self::EchoFuture;
 
 
-    fn rev_echo(&self, msg: super::echo::EchoRequest) -> Self::RevEchoFuture;
+    fn rev_echo(&self, msg: (super::echo::EchoRequest, ::caper::controller::Controller)) -> Self::RevEchoFuture;
 
 }
 
@@ -47,8 +53,8 @@ where
             where
                 S: EchoService + Clone,
             {
-                type Request = super::echo::EchoRequest;
-                type Response = super::echo::EchoResponse;
+                type Request = (super::echo::EchoRequest, ::caper::controller::Controller);
+                type Response = (super::echo::EchoResponse, ::caper::controller::Controller);
                 type Error = ::caper::service::MethodError;
                 type Future = <S as EchoService>::EchoFuture;
 
@@ -76,8 +82,8 @@ where
             where
                 S: EchoService + Clone,
             {
-                type Request = super::echo::EchoRequest;
-                type Response = super::echo::EchoResponse;
+                type Request = (super::echo::EchoRequest, ::caper::controller::Controller);
+                type Response = (super::echo::EchoResponse, ::caper::controller::Controller);
                 type Error = ::caper::service::MethodError;
                 type Future = <S as EchoService>::RevEchoFuture;
 

@@ -15,6 +15,7 @@ use tokio_service::{NewService, Service};
 use tokio_core::reactor::Core;
 use caper::dispatcher::{Registrant, ServiceRegistry};
 use caper::service::MethodError;
+use caper::controller::Controller;
 use caper::channel::{Channel, ChannelBuilder, ChannelOption};
 use caper::stub::{RpcWrapper, StubCallFuture};
 use caper::server::{Server, ServerOption};
@@ -29,30 +30,33 @@ use caper_examples::protos::echo_caper::{EchoService, EchoStub, EchoRegistrant};
 struct Echo;
 
 impl EchoService for Echo {
-    type EchoFuture = Box<Future<Item = EchoResponse, Error = MethodError>>;
+    type EchoFuture = Box<Future<Item = (EchoResponse, Controller), Error = MethodError>>;
 
-    type RevEchoFuture = Box<Future<Item = EchoResponse, Error = MethodError>>;
+    type RevEchoFuture = Box<Future<Item = (EchoResponse, Controller), Error = MethodError>>;
 
-    fn echo(&self, msg: EchoRequest) -> Self::EchoFuture {
+    fn echo(&self, msg: (EchoRequest, Controller)) -> Self::EchoFuture {
+        let (msg, controller) = msg;
         let string = msg.msg;
         let mut response = EchoResponse::new();
         response.msg = string;
-        let future = Ok(response).into_future();
+        let future = Ok(response).into_future()
+            .map(move |resp| (resp, controller));
 
         Box::new(future)
     }
 
-    fn rev_echo(&self, msg: EchoRequest) -> Self::RevEchoFuture {
+    fn rev_echo(&self, msg: (EchoRequest, Controller)) -> Self::RevEchoFuture {
+        let (msg, controller) = msg;
         let string = msg.msg;
         let rev: String = string.chars().rev().collect();
         let mut response = EchoResponse::new();
         response.msg = rev;
-        let future = Ok(response).into_future();
+        let future = Ok(response).into_future()
+            .map(move |resp| (resp, controller));
 
         Box::new(future)
     }
 }
-
 
 fn main() {
     env_logger::init().unwrap();

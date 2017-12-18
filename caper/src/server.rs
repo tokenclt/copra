@@ -10,13 +10,12 @@ use std::sync::Arc;
 use std::net::SocketAddr;
 use futures::{Future, IntoFuture};
 
+use controller::Controller;
 use protocol::{BrpcProtocol, ProtoCodec, Protocol, RpcProtocol};
 use dispatcher::ServiceRegistry;
 use service::{EncapService, MethodError, MethodFuture};
 use message::{RpcRequestMeta, RpcResponseMeta};
-
-type RequestPackage = (RpcRequestMeta, Bytes);
-type ResponsePackage = (RpcResponseMeta, Bytes);
+use message::{RequestPackage, ResponsePackage};
 
 pub type MetaServiceFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
 
@@ -77,7 +76,7 @@ impl Service for MetaService {
     type Future = MetaServiceFuture;
 
     fn call(&self, req: Self::Request) -> Self::Future {
-        let (meta, body) = req;
+        let (meta, controller, body) = req;
         let service = {
             let service_name = meta.get_service_name();
             let method_name = meta.get_method_name();
@@ -94,7 +93,7 @@ impl Service for MetaService {
                 .into_future()
         };
         let response = service
-            .and_then(|service| service.call(body))
+            .and_then(|service| service.call((body, controller)))
             .then(|resp| result_to_errno(resp));
         Box::new(response)
     }
@@ -135,17 +134,17 @@ impl Server {
     }
 }
 
-fn result_to_errno(result: Result<Bytes, MethodError>) -> io::Result<ResponsePackage> {
+fn result_to_errno(result: Result<(Bytes, Controller), MethodError>) -> io::Result<ResponsePackage> {
     result
-        .and_then(|body| {
+        .and_then(|(body, controller)| {
             let mut meta = RpcResponseMeta::new();
             meta.set_error_code(0);
-            Ok((meta, body))
+            Ok((meta, controller, body))
         })
         .or_else(|_| {
             let mut meta = RpcResponseMeta::new();
             meta.set_error_code(1);
             meta.set_error_text("Unknown error".to_string());
-            Ok((meta, Bytes::new()))
+            Ok((meta, Controller::default(), Bytes::new()))
         })
 }
