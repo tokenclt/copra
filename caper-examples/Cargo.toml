@@ -22,3 +22,7 @@ test = false
 
 [[bin]]
 name = "echo"
+
+[[bin]]
+name = "http-hello"
+path = "src/bin/http_hello.rs"

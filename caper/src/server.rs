@@ -1,7 +1,6 @@
 use bytes::Bytes;
 use tokio_proto::TcpServer;
 use tokio_proto::multiplex::{Multiplex, ServerProto};
-use tokio_core::net::TcpStream;
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::Framed;
 use tokio_service::{NewService, Service};
@@ -11,7 +10,7 @@ use std::net::SocketAddr;
 use futures::{Future, IntoFuture};
 
 use controller::Controller;
-use protocol::{BrpcProtocol, ProtoCodec, Protocol, RpcProtocol};
+use protocol::{BrpcProtocol, HttpProtocol, ProtoCodec, Protocol, RpcProtocol};
 use dispatcher::ServiceRegistry;
 use service::{EncapService, MethodError, MethodFuture};
 use message::{RpcRequestMeta, RpcResponseMeta};
@@ -35,7 +34,7 @@ impl MetaServerProtocol {
             .iter()
             .map(|proto| match proto {
                 &Protocol::Brpc => Box::new(BrpcProtocol::new()) as Box<RpcProtocol>,
-                _ => unimplemented!(),
+                &Protocol::Http => Box::new(HttpProtocol::new()) as Box<RpcProtocol>,
             })
             .collect();
         MetaServerProtocol { protocols }
@@ -99,8 +98,6 @@ impl Service for MetaService {
     }
 }
 
-
-
 impl NewService for MetaService {
     type Request = RequestPackage;
     type Response = ResponsePackage;
@@ -111,7 +108,6 @@ impl NewService for MetaService {
         Ok(self.clone())
     }
 }
-
 
 pub struct Server {
     services: Arc<ServiceRegistry>,
@@ -134,7 +130,9 @@ impl Server {
     }
 }
 
-fn result_to_errno(result: Result<(Bytes, Controller), MethodError>) -> io::Result<ResponsePackage> {
+fn result_to_errno(
+    result: Result<(Bytes, Controller), MethodError>,
+) -> io::Result<ResponsePackage> {
     result
         .and_then(|(body, controller)| {
             let mut meta = RpcResponseMeta::new();

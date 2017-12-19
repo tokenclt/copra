@@ -90,7 +90,7 @@ where
     type BindTransport = Result<Self::Transport, io::Error>;
 
     fn bind_transport(&self, io: T) -> Self::BindTransport {
-        let codec = ProtoCodecClient::new(self.proto.box_clone());
+        let codec = ProtoCodecClient::new(self.proto.new_boxed());
         Ok(io.framed(codec))
     }
 }

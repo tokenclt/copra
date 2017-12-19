@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+message HelloRequest {}
+
+message HelloResponse {}
+
+service Hello {
+    rpc hello_general(HelloRequest) returns (HelloResponse);
+    rpc hello_to(HelloRequest) returns (HelloResponse);
+}
