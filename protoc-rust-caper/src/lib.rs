@@ -4,9 +4,9 @@ extern crate inflector;
 extern crate protobuf;
 extern crate protoc;
 extern crate protoc_rust;
-#[macro_use]
-extern crate quote;
 extern crate tempdir;
+#[macro_use]
+extern crate log;
 
 mod codegen;
 

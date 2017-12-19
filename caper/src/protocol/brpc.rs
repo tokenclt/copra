@@ -98,13 +98,13 @@ impl RpcProtocol for BrpcProtocol {
         let pkg_len = 12 + meta_len + body_len;
         let free_len = buf.remaining_mut() as u32;
         if free_len < pkg_len {
-            buf.reserve((pkg_len - free_len) as usize);
+            buf.reserve(pkg_len as usize);
         }
-
+        debug_assert!(HEADER.len() == 4);
         buf.put_slice(HEADER);
         buf.put_u32::<BigEndian>(meta_len + body_len as u32);
         buf.put_u32::<BigEndian>(meta_len);
-        buf.put(meta.write_to_bytes()?);
+        buf.put_slice(meta.write_to_bytes()?.as_slice());
         buf.put(body);
 
         Ok(())

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message Empty {}
+
+message StringMessage {
+    string msg = 1;
+}
+
+message PressureRequest {
+    int32 number = 1;
+}
+
+service Metric {
+    rpc metric(Empty) returns (Empty);
+}
+
+service Pressure {
+    rpc echo(StringMessage) returns (StringMessage);
+    rpc process(PressureRequest) returns (Empty);
+}

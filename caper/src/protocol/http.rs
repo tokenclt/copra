@@ -203,7 +203,12 @@ impl RpcProtocol for HttpProtocol {
                     .sum();
                 let response_len = status_line.as_bytes().len() + header_len + 2 + content_len;
 
-                buf.reserve(response_len);
+                let free_len = buf.remaining_mut();
+                debug!("Free {}, required {}", free_len, response_len);                
+                if free_len < response_len {
+                    buf.reserve(response_len);
+                }
+
                 buf.put_slice(status_line.as_bytes());
                 for (key, val) in headers.iter() {
                     buf.put_slice(key.as_bytes());
@@ -215,7 +220,12 @@ impl RpcProtocol for HttpProtocol {
                 buf.put_slice(&controller.response_body);
             }
             _ => {
-                buf.reserve(status_line.as_bytes().len());
+                let response_len = status_line.as_bytes().len();
+                let free_len = buf.remaining_mut();
+                if free_len < response_len {
+                    buf.reserve(response_len);
+                }
+
                 buf.put_slice(status_line.as_bytes());
             }
         }

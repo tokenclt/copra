@@ -9,14 +9,13 @@ use caper::controller::Controller;
 use caper::protocol::http::HttpStatus;
 use caper::protocol::Protocol;
 use caper::service::MethodError;
-use caper::server::{Server, ServerOption};
+use caper::server::ServerBuilder;
 use caper::dispatcher::ServiceRegistry;
 use caper_examples::protos::http_hello::{HelloRequest, HelloResponse};
-use caper_examples::protos::http_hello_caper::{HelloRegistrant, HelloService, HelloStub};
+use caper_examples::protos::http_hello_caper::{HelloRegistrant, HelloService};
 use futures::future::FutureResult;
 use futures::future;
 use std::mem::replace;
-use tokio_core::reactor::Core;
 
 #[derive(Clone)]
 struct Hello;
@@ -64,10 +63,6 @@ fn main() {
     let registrant = HelloRegistrant::new(Hello);
     let mut registry = ServiceRegistry::new();
     registry.register_service(&"Hello".to_string(), registrant);
-    let server_option = ServerOption {
-        protocols: vec![Protocol::Http],
-    };
-
-    let server = Server::new(addr, server_option, registry);
+    let server = ServerBuilder::new(addr, registry).build();
     server.start();
 }

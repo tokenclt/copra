@@ -9,14 +9,21 @@ pub fn full_message_name(root: &RootScope, input: &str) -> String {
 
 pub fn service_name(proto: &ServiceDescriptorProto) -> io::Result<String> {
     let service_name = proto.get_name();
-    if service_name.is_class_case() {
-        Ok(service_name.into())
+    if !service_name.is_class_case() {
+        warn!(
+            "Service name is not ClassCase, should be converted from {} to {}",
+            service_name,
+            service_name.to_class_case()
+        );
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "Service name should be ClassCase",
-        ))
+        // TODO: report inflect issue
+        // Err(io::Error::new(
+        //     io::ErrorKind::Other,
+        //     format!("Service name should be ClassCase, found {}", service_name),
+        // ))
+
     }
+    Ok(service_name.into())
 }
 
 pub fn registrant_name(proto: &ServiceDescriptorProto) -> io::Result<String> {

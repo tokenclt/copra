@@ -18,11 +18,11 @@ use caper::service::MethodError;
 use caper::controller::Controller;
 use caper::channel::{Channel, ChannelBuilder, ChannelOption};
 use caper::stub::{RpcWrapper, StubCallFuture};
-use caper::server::{Server, ServerOption};
+use caper::server::ServerBuilder;
 use caper::protocol::Protocol;
 
 use caper_examples::protos::echo::{EchoRequest, EchoResponse};
-use caper_examples::protos::echo_caper::{EchoService, EchoStub, EchoRegistrant};
+use caper_examples::protos::echo_caper::{EchoRegistrant, EchoService, EchoStub};
 
 // user visible from here
 
@@ -39,7 +39,8 @@ impl EchoService for Echo {
         let string = msg.msg;
         let mut response = EchoResponse::new();
         response.msg = string;
-        let future = Ok(response).into_future()
+        let future = Ok(response)
+            .into_future()
             .map(move |resp| (resp, controller));
 
         Box::new(future)
@@ -51,7 +52,8 @@ impl EchoService for Echo {
         let rev: String = string.chars().rev().collect();
         let mut response = EchoResponse::new();
         response.msg = rev;
-        let future = Ok(response).into_future()
+        let future = Ok(response)
+            .into_future()
             .map(move |resp| (resp, controller));
 
         Box::new(future)
@@ -67,12 +69,10 @@ fn main() {
     let registrant = EchoRegistrant::new(Echo);
     let mut registry = ServiceRegistry::new();
     registry.register_service(&"Echo".to_string(), registrant);
-    let server_option = ServerOption {
-        protocols: vec![Protocol::Brpc],
-    };
+
     let channel_option = ChannelOption::new();
     thread::spawn(move || {
-        let server = Server::new(addr, server_option, registry);
+        let server = ServerBuilder::new(addr, registry).build();
         server.start();
     });
 

@@ -8,5 +8,5 @@ Inflector = "0.11"
 protoc = "1.4"
 protoc-rust = "1.4"
 protobuf = {version = "1.4", features = ["with-bytes"]}
-quote = "0.3"
+log = "0.3"
 tempdir = "0.3"

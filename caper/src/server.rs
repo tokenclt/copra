@@ -1,13 +1,18 @@
 use bytes::Bytes;
+use tokio_core::reactor::Remote;
 use tokio_proto::TcpServer;
 use tokio_proto::multiplex::{Multiplex, ServerProto};
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::Framed;
 use tokio_service::{NewService, Service};
+use tokio_timer::Timer;
 use std::io;
 use std::sync::Arc;
+use std::sync::atomic::AtomicUsize;
+use std::time::Duration;
 use std::net::SocketAddr;
-use futures::{Future, IntoFuture};
+use futures::{Future, IntoFuture, Stream};
+use futures::future::Executor;
 
 use controller::Controller;
 use protocol::{BrpcProtocol, HttpProtocol, ProtoCodec, Protocol, RpcProtocol};
@@ -15,6 +20,7 @@ use dispatcher::ServiceRegistry;
 use service::{EncapService, MethodError, MethodFuture};
 use message::{RpcRequestMeta, RpcResponseMeta};
 use message::{RequestPackage, ResponsePackage};
+use monitor::{ThroughputMaintainer, TrafficCounting};
 
 pub type MetaServiceFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
 
@@ -23,12 +29,21 @@ pub struct ServerOption {
     pub protocols: Vec<Protocol>,
 }
 
+impl Default for ServerOption {
+    fn default() -> Self {
+        ServerOption {
+            protocols: vec![Protocol::Brpc, Protocol::Http],
+        }
+    }
+}
+
 pub struct MetaServerProtocol {
     protocols: Vec<Box<RpcProtocol>>,
+    finished: Arc<AtomicUsize>,
 }
 
 impl MetaServerProtocol {
-    pub fn new(option: &ServerOption) -> Self {
+    pub fn new(option: &ServerOption, finished: Arc<AtomicUsize>) -> Self {
         let protocols: Vec<_> = option
             .protocols
             .iter()
@@ -37,7 +52,11 @@ impl MetaServerProtocol {
                 &Protocol::Http => Box::new(HttpProtocol::new()) as Box<RpcProtocol>,
             })
             .collect();
-        MetaServerProtocol { protocols }
+
+        MetaServerProtocol {
+            protocols,
+            finished,
+        }
     }
 }
 
@@ -47,13 +66,14 @@ where
 {
     type Request = RequestPackage;
     type Response = ResponsePackage;
-    type Transport = Framed<T, ProtoCodec>;
+    type Transport = TrafficCounting<Framed<T, ProtoCodec>>;
     type BindTransport = Result<Self::Transport, io::Error>;
 
     fn bind_transport(&self, io: T) -> Self::BindTransport {
         debug!("New connection established");
         let codec = ProtoCodec::new(self.protocols.as_slice());
-        Ok(io.framed(codec))
+        let counting_wrapper = TrafficCounting::new(self.finished.clone(), io.framed(codec));
+        Ok(counting_wrapper)
     }
 }
 
@@ -109,23 +129,72 @@ impl NewService for MetaService {
     }
 }
 
-pub struct Server {
-    services: Arc<ServiceRegistry>,
-    listener: TcpServer<Multiplex, MetaServerProtocol>,
+pub struct ServerBuilder<'a> {
+    services: ServiceRegistry,
+    addr: &'a str,
+    option: Option<ServerOption>,
+    remote: Option<Remote>,
+    throughput: Option<Arc<AtomicUsize>>,
 }
 
-impl Server {
-    pub fn new(addr: &str, option: ServerOption, registry: ServiceRegistry) -> Self {
-        let socket_addr = addr.parse().expect("Parse listening addr failed");
-        let server = TcpServer::new(MetaServerProtocol::new(&option), socket_addr);
-        info!("Server listensing : {}", socket_addr);
-        Server {
-            services: Arc::new(registry),
-            listener: server,
+impl<'a> ServerBuilder<'a> {
+    pub fn new(addr: &'a str, services: ServiceRegistry) -> Self {
+        ServerBuilder {
+            services,
+            addr,
+            option: None,
+            remote: None,
+            throughput: None,
         }
     }
 
+    pub fn option(mut self, option: ServerOption) -> Self {
+        self.option = Some(option);
+        self
+    }
+
+    pub fn throughput(mut self, throughput: Arc<AtomicUsize>, remote: Remote) -> Self {
+        self.throughput = Some(throughput);
+        self.remote = Some(remote);
+        self
+    }
+
+    pub fn build(self) -> Server {
+        let finished = Arc::new(AtomicUsize::new(0));
+        let option = self.option.unwrap_or(ServerOption::default());
+        let throughput = self.throughput.unwrap_or(Arc::new(AtomicUsize::new(0)));
+        let socket_addr = self.addr.parse().expect("Parse listening addr failed");
+        let server = TcpServer::new(
+            MetaServerProtocol::new(&option, finished.clone()),
+            socket_addr,
+        );
+        info!("Server listensing : {}", socket_addr);
+        Server {
+            services: Arc::new(self.services),
+            listener: server,
+            throughput,
+            finished,
+            remote: self.remote,
+        }
+    }
+}
+
+pub struct Server {
+    services: Arc<ServiceRegistry>,
+    listener: TcpServer<Multiplex, MetaServerProtocol>,
+    finished: Arc<AtomicUsize>,
+    throughput: Arc<AtomicUsize>,
+    remote: Option<Remote>,
+}
+
+impl Server {
     pub fn start(&self) {
+        if let Some(ref remote) = self.remote {
+            let maintainer =
+                ThroughputMaintainer::new(self.finished.clone(), self.throughput.clone());
+            remote.execute(maintainer.for_each(|_| Ok(()))).unwrap();
+        }
+
         self.listener.serve(MetaService::new(self.services.clone()))
     }
 }

@@ -186,7 +186,7 @@ where
             .then(|result| sender.send(result))
             // TODO: Or maybe just ignore this error, for the rpc request might be cancelled.
             .map_err(|_| panic!("The receiving end of the oneshot is dropped."));
-        debug!("Request sent through channel backend");
+        //debug!("Request sent through channel backend");
         self.handle.spawn(fut);
     }
 }
