@@ -4,3 +4,5 @@ pub mod http_hello;
 pub mod http_hello_caper;
 pub mod benchmark;
 pub mod benchmark_caper;
+pub mod demo;
+pub mod demo_caper;

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+message GreetMessage {
+    string msg = 1;
+}
+
+message PrimeRequest {
+    uint64 number = 1;
+}
+
+message PrimeResponse {
+    uint64 number = 1;
+    bool is_prime = 2;
+}
+
+service Demo {
+    rpc greet_to(GreetMessage) returns (GreetMessage);
+    rpc is_prime(PrimeRequest) returns (PrimeResponse);
+}

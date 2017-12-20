@@ -7,6 +7,7 @@ fn main() {
             "src/protos/echo.proto",
             "src/protos/http_hello.proto",
             "src/protos/benchmark.proto",
+            "src/protos/demo.proto",
         ],
         includes: &[],
         rust_protobuf: true,

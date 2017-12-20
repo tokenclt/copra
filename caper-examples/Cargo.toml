@@ -7,11 +7,15 @@ authors = ["AprliRainkun <zmy.2347@sjtu.edu.cn>"]
 caper = { path = "../caper" }
 env_logger = "0.4"
 futures = "0.1"
+futures-cpupool = "0.1"
 protobuf = "1.4"
+primal = "0.2"
+rand = "0.4"
 tokio-io = "0.1"
 tokio-core = "0.1"
 tokio-proto = "0.1"
 tokio-service = "0.1"
+tokio-timer = "0.1"
 
 [build-dependencies]
 protoc-rust-caper = { path = "../protoc-rust-caper" }
@@ -29,3 +33,6 @@ path = "src/bin/http_hello.rs"
 
 [[bin]]
 name = "benchmark"
+
+[[bin]]
+name = "demo"
