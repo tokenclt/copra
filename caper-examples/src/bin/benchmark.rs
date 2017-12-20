@@ -77,7 +77,6 @@ fn main() {
     let client_thread_num = 4;
     let addr = "127.0.0.1:8991";
     let mut core = Core::new().unwrap();
-    let handle = core.handle();
     let mut registry = ServiceRegistry::new();
     let throughtput = Arc::new(AtomicUsize::new(0));
 
@@ -87,6 +86,7 @@ fn main() {
     registry.register_service(&"Metric".to_string(), registrant);
 
     let server = ServerBuilder::new(addr, registry)
+        .threads(2)
         .throughput(throughtput, core.remote())
         .build();
 
@@ -95,23 +95,26 @@ fn main() {
     });
     thread::sleep(Duration::from_millis(100));
 
-    let channel_option = ChannelOption::new();
-    let (channel, backend) = core.run(ChannelBuilder::single_server(
-        addr,
-        handle.clone(),
-        channel_option,
-    )).unwrap();
-    handle.spawn(backend);
-
-    let threads: Vec<_> = (0..client_thread_num)
-        .map(|_| channel.clone())
-        .map(|channel| {
+    let _threads: Vec<_> = (0..client_thread_num)
+        .map(|_| {
             thread::spawn(move || {
+                let channel_option = ChannelOption::new();
+                let mut core = Core::new().unwrap();
+                let handle = core.handle();
+                let (channel, backend) = core.run(ChannelBuilder::single_server(
+                    addr,
+                    handle.clone(),
+                    channel_option,
+                )).unwrap();
+
+                handle.spawn(backend);
+
                 let pressure = PressureStub::new(&channel);
                 loop {
                     let mut req = StringMessage::new();
-                    req.set_msg("Hello from client".to_string());
-                    let _resp = pressure.echo(req).wait().unwrap();
+                    req.set_msg("ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE".to_string());
+                    let resp = pressure.echo(req);
+                    core.run(resp).unwrap();
                 }
             })
         })

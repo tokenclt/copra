@@ -99,7 +99,7 @@ impl Stream for ThroughputMaintainer {
         let finished = self.finished.swap(0, Ordering::SeqCst);
         let elapse = elapse.as_secs() as f32 + (elapse.subsec_nanos() as f32 / 1e9);
         let throughput = (finished as f32 / elapse) as usize;
-        debug!("New finished: {}, throughput {}", finished, throughput);
+        info!("New finished: {}, throughput {}", finished, throughput);
         self.throughput.store(throughput, Ordering::SeqCst);
 
         Ok(Async::Ready(Some(())))

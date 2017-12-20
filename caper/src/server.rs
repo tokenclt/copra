@@ -132,6 +132,7 @@ impl NewService for MetaService {
 pub struct ServerBuilder<'a> {
     services: ServiceRegistry,
     addr: &'a str,
+    threads: Option<usize>,
     option: Option<ServerOption>,
     remote: Option<Remote>,
     throughput: Option<Arc<AtomicUsize>>,
@@ -142,10 +143,16 @@ impl<'a> ServerBuilder<'a> {
         ServerBuilder {
             services,
             addr,
+            threads: None,
             option: None,
             remote: None,
             throughput: None,
         }
+    }
+
+    pub fn threads(mut self, threads: usize) -> Self {
+        self.threads = Some(threads);
+        self
     }
 
     pub fn option(mut self, option: ServerOption) -> Self {
@@ -161,13 +168,16 @@ impl<'a> ServerBuilder<'a> {
 
     pub fn build(self) -> Server {
         let finished = Arc::new(AtomicUsize::new(0));
+        let threads = self.threads.unwrap_or(1);
         let option = self.option.unwrap_or(ServerOption::default());
         let throughput = self.throughput.unwrap_or(Arc::new(AtomicUsize::new(0)));
         let socket_addr = self.addr.parse().expect("Parse listening addr failed");
-        let server = TcpServer::new(
+        let mut server = TcpServer::new(
             MetaServerProtocol::new(&option, finished.clone()),
             socket_addr,
         );
+        server.threads(threads);
+        
         info!("Server listensing : {}", socket_addr);
         Server {
             services: Arc::new(self.services),
