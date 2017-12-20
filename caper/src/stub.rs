@@ -1,7 +1,5 @@
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use futures::{Future, IntoFuture};
-use tokio_service::Service;
-use std::marker::PhantomData;
 use std::io;
 
 use codec::MethodCodec;

@@ -1,19 +1,12 @@
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use futures::{Future, IntoFuture};
-use protobuf::{parse_from_carllerche_bytes, Message, MessageStatic};
-use std::marker::PhantomData;
-use std::error;
 use std::io;
 use tokio_service::NewService;
-use std::sync::Arc;
 
 use controller::Controller;
 use codec::{MethodCodec, ProtobufError};
-use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
 
 pub use tokio_service::Service;
-
-type StdError = error::Error;
 
 type Bundle = (Bytes, Controller);
 

@@ -1,15 +1,11 @@
 use bytes::{BigEndian, Buf, BufMut, Bytes, BytesMut};
-use futures::Future;
 use std::io;
-use tokio_io::codec::{Decoder, Encoder};
-use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_proto::multiplex::RequestId;
 use protobuf::{parse_from_carllerche_bytes, Message};
 
 use super::{ProtocolError, RpcProtocol};
 use controller::Controller;
-use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
-use message::{RequestPackage, ResponsePackage};
+use message::RpcMeta;
 
 static HEADER: &[u8] = b"PRPC";
 

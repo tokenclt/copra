@@ -15,17 +15,15 @@ use caper::channel::{ChannelBuilder, ChannelOption};
 use caper::dispatcher::ServiceRegistry;
 use caper::service::MethodError;
 use caper::server::ServerBuilder;
-use caper::protocol::http::HttpStatus;
 use caper_examples::protos::demo::{GreetMessage, PrimeRequest, PrimeResponse};
 use caper_examples::protos::demo_caper::{DemoRegistrant, DemoService, DemoStub};
 use futures::Future;
 use futures::future::FutureResult;
 use futures::future;
-use futures_cpupool::{CpuFuture, CpuPool};
+use futures_cpupool::CpuPool;
 use rand::Rng;
 use std::thread;
 use std::time::Duration;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use tokio_core::reactor::Core;
 use tokio_timer::Timer;
@@ -119,28 +117,27 @@ fn main() {
     let stub = DemoStub::new(&channel);
 
     let timer = Timer::default();
-    let mut gen = rand::thread_rng();
+    //let mut gen = rand::thread_rng();
 
     loop {
         let mut hello_req = GreetMessage::new();
         hello_req.set_msg(random_name());
         let wait = timer.sleep(Duration::from_millis(1500)).map_err(|_| ());
-        let fut = stub.greet_to(hello_req.clone())
-            .map_err(|_| ())
-            .and_then(|(msg, _)| {
-                println!("Received: {}", msg.get_msg());
-                let number = gen.gen_range(1_000_000_usize, 1_000_000_000_usize);
-                let mut msg = PrimeRequest::new();
-                msg.set_number(number as u64);
-                stub.is_prime(msg)
-                    .and_then(|(resp, _)| {
-                        let number = resp.get_number();
-                        let ans = if resp.get_is_prime() { "Yes" } else { "No" };
-                        // println!("Number {} is Prime? Answer: {}", number, ans);
-                        Ok(())
-                    })
-                    .map_err(|_| ())
-            });
+        let fut = stub.greet_to(hello_req.clone()).map_err(|_| ());
+        // .and_then(|(msg, _)| {
+        //     println!("Received: {}", msg.get_msg());
+        //     let number = gen.gen_range(1_000_000_usize, 1_000_000_000_usize);
+        //     let mut msg = PrimeRequest::new();
+        //     msg.set_number(number as u64);
+        //     stub.is_prime(msg)
+        //         .and_then(|(resp, _)| {
+        //             let number = resp.get_number();
+        //             let ans = if resp.get_is_prime() { "Yes" } else { "No" };
+        //             println!("Number {} is Prime? Answer: {}", number, ans);
+        //             Ok(())
+        //         })
+        //         .map_err(|_| ())
+        // });
 
         core.run(fut.join(wait)).unwrap();
     }

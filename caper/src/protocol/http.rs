@@ -1,21 +1,15 @@
-use bytes::{BigEndian, Buf, BufMut, Bytes, BytesMut};
-use futures::{future, Future};
+use bytes::{BufMut, Bytes, BytesMut};
 use std::io;
 use std::str;
 use std::collections::HashMap;
-use tokio_io::codec::{Decoder, Encoder};
-use tokio_io::{AsyncRead, AsyncWrite};
-use tokio_proto::multiplex::{ClientProto, RequestId, ServerProto};
-use httparse::Header as HttpHeader;
+use tokio_proto::multiplex::RequestId;
 use httparse::Request as HttpRequest;
-use httparse::Error as HttpParseError;
 use httparse::Status;
 use httparse;
 
 use controller::Controller;
 use super::{ProtocolError, RpcProtocol};
-use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
-use message::{RequestPackage, ResponsePackage};
+use message::{RpcMeta, RpcRequestMeta};
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum HttpStatus {
@@ -204,7 +198,7 @@ impl RpcProtocol for HttpProtocol {
                 let response_len = status_line.as_bytes().len() + header_len + 2 + content_len;
 
                 let free_len = buf.remaining_mut();
-                debug!("Free {}, required {}", free_len, response_len);                
+                debug!("Free {}, required {}", free_len, response_len);
                 if free_len < response_len {
                     buf.reserve(response_len);
                 }

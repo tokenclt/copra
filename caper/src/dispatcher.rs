@@ -1,8 +1,6 @@
-use bytes::BytesMut;
 use std::collections::HashMap;
-use tokio_service::{NewService, Service};
 
-use service::{EncapService, MethodError, MethodFuture, NewEncapService};
+use service::{EncapService, NewEncapService};
 
 pub struct ServiceRegistry{
     registry: HashMap<String, HashMap<String, NewEncapService>>,

@@ -7,7 +7,6 @@ extern crate tokio_core;
 
 use caper::controller::Controller;
 use caper::protocol::http::HttpStatus;
-use caper::protocol::Protocol;
 use caper::service::MethodError;
 use caper::server::ServerBuilder;
 use caper::dispatcher::ServiceRegistry;

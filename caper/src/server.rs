@@ -5,20 +5,17 @@ use tokio_proto::multiplex::{Multiplex, ServerProto};
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::Framed;
 use tokio_service::{NewService, Service};
-use tokio_timer::Timer;
 use std::io;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
-use std::time::Duration;
-use std::net::SocketAddr;
 use futures::{Future, IntoFuture, Stream};
 use futures::future::Executor;
 
 use controller::Controller;
 use protocol::{BrpcProtocol, HttpProtocol, ProtoCodec, Protocol, RpcProtocol};
 use dispatcher::ServiceRegistry;
-use service::{EncapService, MethodError, MethodFuture};
-use message::{RpcRequestMeta, RpcResponseMeta};
+use service::MethodError;
+use message::RpcResponseMeta;
 use message::{RequestPackage, ResponsePackage};
 use monitor::{ThroughputMaintainer, TrafficCounting};
 

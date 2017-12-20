@@ -1,5 +1,5 @@
 use protobuf::compiler_plugin::GenResult;
-use protobuf::descriptor::{FileDescriptorProto, ServiceDescriptorProto};
+use protobuf::descriptor::FileDescriptorProto;
 use protobuf::descriptorx;
 use std::collections::HashMap;
 use std::io;

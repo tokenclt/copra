@@ -1,4 +1,4 @@
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use tokio_core::net::TcpStream;
 use tokio_core::reactor::Handle;
 use tokio_io::{AsyncRead, AsyncWrite};
@@ -6,18 +6,15 @@ use tokio_io::codec::Framed;
 use tokio_proto::multiplex::{ClientProto, ClientService};
 use tokio_proto::TcpClient;
 use tokio_service::Service;
-use futures::{Async, Future, IntoFuture, Poll, Sink, Stream};
+use futures::{Async, Future, IntoFuture, Poll, Stream};
 use futures::sync::mpsc;
 use futures::sync::oneshot;
 use std::io;
-use std::clone;
-use std::marker::PhantomData;
-use std::net::{AddrParseError, SocketAddr};
+use std::net::AddrParseError;
 use std::time::Duration;
 
 use protocol::{BrpcProtocol, ProtoCodecClient, Protocol, RpcProtocol};
-use service::MethodError;
-use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
+use message::{RpcRequestMeta, RpcResponseMeta};
 
 type RequestPackage = (RpcRequestMeta, Bytes);
 type ResponsePackage = (RpcResponseMeta, Bytes);
@@ -119,7 +116,7 @@ impl ChannelBuilder {
             .map_err(|_| ChannelInitError::UnknownError)
             .map(|service| {
                 info!("Channel connection established");
-                (channel, ChannelBackend::new(option, rx, handle, service))
+                (channel, ChannelBackend::new(rx, handle, service))
             });
 
         Box::new(fut)
@@ -153,7 +150,6 @@ impl Channel {
 
 #[must_use = "Channel backend should be spawned on an event loop, otherwise no request will be sent"]
 pub struct ChannelBackend<S> {
-    option: ChannelOption,
     recv: ChannelReceiver,
     handle: Handle,
     abstract_service: S,
@@ -161,13 +157,11 @@ pub struct ChannelBackend<S> {
 
 impl<S> ChannelBackend<S> {
     pub fn new(
-        option: ChannelOption,
         recv: ChannelReceiver,
         handle: Handle,
         abstract_service: S,
     ) -> Self {
         ChannelBackend {
-            option,
             recv,
             handle,
             abstract_service,

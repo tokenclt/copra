@@ -8,18 +8,14 @@ extern crate tokio_proto;
 extern crate tokio_service;
 
 use futures::{Future, IntoFuture};
-use futures::future::Executor;
 use std::thread;
 use std::time::Duration;
-use tokio_service::{NewService, Service};
 use tokio_core::reactor::Core;
-use caper::dispatcher::{Registrant, ServiceRegistry};
+use caper::dispatcher::ServiceRegistry;
 use caper::service::MethodError;
 use caper::controller::Controller;
-use caper::channel::{Channel, ChannelBuilder, ChannelOption};
-use caper::stub::{RpcWrapper, StubCallFuture};
+use caper::channel::{ChannelBuilder, ChannelOption};
 use caper::server::ServerBuilder;
-use caper::protocol::Protocol;
 
 use caper_examples::protos::echo::{EchoRequest, EchoResponse};
 use caper_examples::protos::echo_caper::{EchoRegistrant, EchoService, EchoStub};
@@ -76,7 +72,7 @@ fn main() {
         server.start();
     });
 
-    thread::sleep_ms(100);
+    thread::sleep(Duration::from_millis(100));
 
     let (channel, backend) = core.run(ChannelBuilder::single_server(
         addr,

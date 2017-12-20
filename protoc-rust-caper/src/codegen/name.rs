@@ -1,5 +1,5 @@
 use inflector::Inflector;
-use protobuf::descriptor::{FileDescriptorProto, ServiceDescriptorProto};
+use protobuf::descriptor::ServiceDescriptorProto;
 use protobuf::descriptorx::{RootScope, WithScope};
 use std::io;
 

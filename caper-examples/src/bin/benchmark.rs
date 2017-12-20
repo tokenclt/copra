@@ -15,7 +15,6 @@ use caper::protocol::http::HttpStatus;
 use caper_examples::protos::benchmark::{Empty, PressureRequest, StringMessage};
 use caper_examples::protos::benchmark_caper::{MetricRegistrant, MetricService, PressureRegistrant,
                                               PressureService, PressureStub};
-use futures::Future;
 use futures::future::FutureResult;
 use futures::future;
 use std::thread;
@@ -40,7 +39,7 @@ impl PressureService for Pressure {
         future::ok((resp, controller))
     }
 
-    fn process(&self, msg: (PressureRequest, Controller)) -> Self::ProcessFuture {
+    fn process(&self, _msg: (PressureRequest, Controller)) -> Self::ProcessFuture {
         unimplemented!()
     }
 }

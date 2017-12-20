@@ -1,4 +1,3 @@
-use httparse::Header;
 use std::collections::HashMap;
 
 use protocol::http::HttpStatus;

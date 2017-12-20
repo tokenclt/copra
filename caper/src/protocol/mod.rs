@@ -1,11 +1,8 @@
-use bytes::{Buf, BufMut, Bytes, BytesMut};
-use futures::{future, Future};
+use bytes::{Bytes, BytesMut};
 use smallvec::SmallVec;
 use std::io;
 use tokio_io::codec::{Decoder, Encoder};
-use tokio_io::{AsyncRead, AsyncWrite};
-use tokio_io::codec::Framed;
-use tokio_proto::multiplex::{ClientProto, RequestId, ServerProto};
+use tokio_proto::multiplex::RequestId;
 
 use controller::Controller;
 use message::{RpcMeta, RpcRequestMeta, RpcResponseMeta};
@@ -43,7 +40,6 @@ pub trait RpcProtocol: Sync + Send {
         buf: &mut BytesMut,
     ) -> io::Result<()>;
 }
-
 
 pub struct ProtoCodec {
     schemes: SmallVec<[Box<RpcProtocol>; 4]>,
