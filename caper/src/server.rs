@@ -175,7 +175,7 @@ impl<'a> ServerBuilder<'a> {
         );
         server.threads(threads);
         
-        info!("Server listensing : {}", socket_addr);
+        info!("Server listening: {}", socket_addr);
         Server {
             services: Arc::new(self.services),
             listener: server,
