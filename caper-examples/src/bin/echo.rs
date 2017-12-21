@@ -64,7 +64,7 @@ fn main() {
     let handle = core.handle();
     let registrant = EchoRegistrant::new(Echo);
     let mut registry = ServiceRegistry::new();
-    registry.register_service(&"Echo".to_string(), registrant);
+    registry.register_service("Echo", registrant);
 
     let channel_option = ChannelOption::new();
     thread::spawn(move || {

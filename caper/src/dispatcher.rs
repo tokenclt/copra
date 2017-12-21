@@ -13,15 +13,16 @@ impl ServiceRegistry {
         }
     }
 
-    pub fn register_service<T>(&mut self, service_name: &String, registrant: T)
+    pub fn register_service<T, S>(&mut self, service_name: S, registrant: T)
     where
         T: Registrant,
+        S: ToString,
     {
         let mut map = HashMap::new();
         for (method_name, encap) in registrant.methods().into_iter() {
             map.insert(method_name, encap);
         }
-        self.registry.insert(service_name.clone(), map);
+        self.registry.insert(service_name.to_string(), map);
     }
 
     pub fn get_method(

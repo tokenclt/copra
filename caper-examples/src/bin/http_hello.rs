@@ -61,7 +61,7 @@ fn main() {
 
     let registrant = HelloRegistrant::new(Hello);
     let mut registry = ServiceRegistry::new();
-    registry.register_service(&"Hello".to_string(), registrant);
+    registry.register_service("Hello", registrant);
     let server = ServerBuilder::new(addr, registry).build();
     server.start();
 }

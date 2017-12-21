@@ -94,6 +94,7 @@ fn random_name() -> String {
 fn main() {
     env_logger::init().unwrap();
 
+    //setup server
     let addr = "127.0.0.1:8992";
     let mut core = Core::new().unwrap();
     let handle = core.handle();
@@ -101,7 +102,7 @@ fn main() {
     let pool = CpuPool::new(2);
 
     let registrant = DemoRegistrant::new(Demo::new(Arc::new(pool)));
-    registry.register_service(&"Demo".to_string(), registrant);
+    registry.register_service("Demo", registrant);
 
     let server = ServerBuilder::new(addr, registry).build();
     thread::spawn(move || {
@@ -109,11 +110,13 @@ fn main() {
     });
     thread::sleep(Duration::from_millis(100));
 
+    //setup client
     let option = ChannelOption::new();
     let (channel, backend) = core.run(ChannelBuilder::single_server(addr, handle.clone(), option))
         .unwrap();
     handle.spawn(backend);
 
+    //create a stub for DemoService
     let stub = DemoStub::new(&channel);
 
     let timer = Timer::default();
@@ -123,21 +126,13 @@ fn main() {
         let mut hello_req = GreetMessage::new();
         hello_req.set_msg(random_name());
         let wait = timer.sleep(Duration::from_millis(1500)).map_err(|_| ());
-        let fut = stub.greet_to(hello_req.clone()).map_err(|_| ());
-        // .and_then(|(msg, _)| {
-        //     println!("Received: {}", msg.get_msg());
-        //     let number = gen.gen_range(1_000_000_usize, 1_000_000_000_usize);
-        //     let mut msg = PrimeRequest::new();
-        //     msg.set_number(number as u64);
-        //     stub.is_prime(msg)
-        //         .and_then(|(resp, _)| {
-        //             let number = resp.get_number();
-        //             let ans = if resp.get_is_prime() { "Yes" } else { "No" };
-        //             println!("Number {} is Prime? Answer: {}", number, ans);
-        //             Ok(())
-        //         })
-        //         .map_err(|_| ())
-        // });
+        println!("Sent: {}", hello_req.get_msg());
+        let fut = stub.greet_to(hello_req.clone())
+            .map_err(|_| ())
+            .map(|(msg, _)| {
+                println!("Received: {}", msg.get_msg());
+                println!("--------------------------------");
+            });
 
         core.run(fut.join(wait)).unwrap();
     }
