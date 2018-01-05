@@ -9,11 +9,11 @@ pub fn full_message_name(root: &RootScope, input: &str) -> String {
 
 pub fn service_name(proto: &ServiceDescriptorProto) -> io::Result<String> {
     let service_name = proto.get_name();
-    if !service_name.is_class_case() {
+    if !service_name.is_pascal_case() {
         warn!(
-            "Service name is not ClassCase, should be converted from {} to {}",
+            "Service name is not PascalCase, should be converted from {} to {}",
             service_name,
-            service_name.to_class_case()
+            service_name.to_pascal_case()
         );
     } else {
         // TODO: report inflect issue
@@ -62,7 +62,7 @@ pub fn method_names(proto: &ServiceDescriptorProto) -> io::Result<Vec<String>> {
 pub fn future_names(proto: &ServiceDescriptorProto) -> io::Result<Vec<String>> {
     let names = method_names(proto)?
         .into_iter()
-        .map(|name| name.to_class_case())
+        .map(|name| name.to_pascal_case())
         .map(|name| name + "Future")
         .collect();
     Ok(names)
