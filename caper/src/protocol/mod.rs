@@ -20,6 +20,7 @@ pub enum Protocol {
     Http,
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum ProtocolError {
     TryOthers,
     NeedMoreBytes,

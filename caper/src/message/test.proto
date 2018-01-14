@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+message TestMessage {
+    string string_field = 1;
+    int32 i32_field = 2;
+    float float_field = 3;
+}

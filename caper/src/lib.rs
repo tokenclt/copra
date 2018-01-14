@@ -12,6 +12,8 @@ extern crate tokio_proto;
 extern crate tokio_service;
 extern crate tokio_timer;
 extern crate url;
+#[cfg(test)]
+extern crate rand;
 
 pub mod channel;
 pub mod controller;

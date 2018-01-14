@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use protocol::http::HttpStatus;
 
-#[derive(Default, Clone)]
+#[derive(Clone, Default, Debug, PartialEq)]
 pub struct Controller {
     pub http_url: Option<String>,
     pub headers: HashMap<String, String>,

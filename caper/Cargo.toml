@@ -19,3 +19,6 @@ url = "1.6"
 
 [build-dependencies]
 protoc-rust = "1.4"
+
+[dev-dependencies]
+rand = "0.4"
