@@ -64,17 +64,17 @@ where
 }
 
 pub struct ThroughputMaintainer {
-    timer: Interval,
+    interval: Interval,
     finished: Arc<AtomicUsize>,
     throughput: Arc<AtomicUsize>,
     last_fired: SystemTime,
 }
 
 impl ThroughputMaintainer {
-    pub fn new(finished: Arc<AtomicUsize>, throughput: Arc<AtomicUsize>) -> Self {
-        let timer = Timer::default().interval(Duration::from_secs(1));
+    pub fn new(timer: Timer, finished: Arc<AtomicUsize>, throughput: Arc<AtomicUsize>) -> Self {
+        let interval = timer.interval(Duration::from_secs(1));
         ThroughputMaintainer {
-            timer,
+            interval,
             finished,
             throughput,
             last_fired: SystemTime::now(),
@@ -88,7 +88,7 @@ impl Stream for ThroughputMaintainer {
     type Error = ();
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        try_ready!(self.timer.poll().map_err(|_| ()));
+        try_ready!(self.interval.poll().map_err(|_| ()));
 
         let new_time = SystemTime::now();
         let elapse = new_time
