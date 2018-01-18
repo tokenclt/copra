@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use service::{EncapService, NewEncapService};
 
-pub struct ServiceRegistry{
+pub struct ServiceRegistry {
     registry: HashMap<String, HashMap<String, NewEncapService>>,
 }
 
@@ -25,11 +25,7 @@ impl ServiceRegistry {
         self.registry.insert(service_name.to_string(), map);
     }
 
-    pub fn get_method(
-        &self,
-        service_name: &str,
-        method_name: &str,
-    ) -> Option<EncapService> {
+    pub fn get_method(&self, service_name: &str, method_name: &str) -> Option<EncapService> {
         self.registry
             .get(service_name)
             .and_then(|methods| methods.get(method_name))

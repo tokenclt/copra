@@ -15,6 +15,10 @@ use std::time::Duration;
 
 use protocol::{BrpcProtocol, ProtoCodecClient, Protocol, RpcProtocol};
 use message::{RpcRequestMeta, RpcResponseMeta};
+use self::transport::Transport;
+
+mod connector;
+mod transport;
 
 type RequestPackage = (RpcRequestMeta, Bytes);
 type ResponsePackage = (RpcResponseMeta, Bytes);
@@ -83,12 +87,13 @@ where
 {
     type Request = RequestPackage;
     type Response = ResponsePackage;
-    type Transport = Framed<T, ProtoCodecClient>;
+    type Transport = Transport<Framed<T, ProtoCodecClient>>;
     type BindTransport = Result<Self::Transport, io::Error>;
 
     fn bind_transport(&self, io: T) -> Self::BindTransport {
         let codec = ProtoCodecClient::new(self.proto.new_boxed());
-        Ok(io.framed(codec))
+        let transport = Transport::new(io.framed(codec));
+        Ok(transport)
     }
 }
 
@@ -144,6 +149,7 @@ impl Channel {
             // refering to request cancelation.
             .map_err(|_| panic!("The sending end of the oneshot is dropped"))
             .and_then(|result| result);
+            
         Box::new(fut)
     }
 }
