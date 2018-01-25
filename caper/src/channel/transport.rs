@@ -5,12 +5,12 @@ use tokio_proto::multiplex::RequestId;
 use super::{RequestPackage, ResponsePackage};
 
 pub struct Transport<T> {
-    io: T,
+    inner: T,
 }
 
 impl<T> Transport<T> {
-    pub fn new(io: T) -> Self {
-        Transport { io }
+    pub fn new(inner: T) -> Self {
+        Transport { inner }
     }
 }
 
@@ -23,7 +23,7 @@ where
     type Error = io::Error;
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        self.io.poll()
+        self.inner.poll()
     }
 }
 
@@ -36,10 +36,10 @@ where
     type SinkError = io::Error;
 
     fn start_send(&mut self, item: Self::SinkItem) -> StartSend<Self::SinkItem, Self::SinkError> {
-        self.io.start_send(item)
+        self.inner.start_send(item)
     }
 
     fn poll_complete(&mut self) -> Poll<(), Self::SinkError> {
-        self.io.poll_complete()
+        self.inner.poll_complete()
     }
 }

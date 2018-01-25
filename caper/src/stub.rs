@@ -3,7 +3,7 @@ use futures::{Future, IntoFuture};
 use std::io;
 
 use codec::MethodCodec;
-use channel::Channel;
+use channel::{Channel, ChannelError};
 
 use message::{RpcRequestMeta, RpcResponseMeta};
 use service::MethodError;
@@ -53,7 +53,7 @@ where
     }
 }
 
-fn errno_to_result(result: io::Result<ResponsePackage>) -> Result<Bytes, MethodError> {
+fn errno_to_result(result: Result<ResponsePackage, ChannelError>) -> Result<Bytes, MethodError> {
     result
         .map_err(|_| MethodError::UnknownError)
         .and_then(|(meta, body)| {

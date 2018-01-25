@@ -10,201 +10,211 @@ use futures::{Async, Future, IntoFuture, Poll, Stream};
 use futures::sync::mpsc;
 use futures::sync::oneshot;
 use std::io;
-use std::net::AddrParseError;
+use std::net::{AddrParseError, SocketAddr};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use protocol::{BrpcProtocol, ProtoCodecClient, Protocol, RpcProtocol};
+use load_balancer::single_server::SingleServerLoadBalancer;
 use message::{RpcRequestMeta, RpcResponseMeta};
 use self::transport::Transport;
+use self::backend::ChannelBackend;
+use self::connector::Connector;
 
-mod connector;
-mod transport;
+pub mod backend;
+pub mod connector;
+pub mod transport;
 
 type RequestPackage = (RpcRequestMeta, Bytes);
 type ResponsePackage = (RpcResponseMeta, Bytes);
 
-pub type ChannelFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
+pub type ChannelBuildFuture = Box<Future<Item = Channel, Error = ChannelBuildError>>;
 
-pub type ConnectFuture<S> = Box<
-    Future<Item = (Channel, ChannelBackend<S>), Error = ChannelInitError>,
->;
-
-type ConcreteClientService = ClientService<TcpStream, MetaClientProtocol>;
+//type ConcreteClientService = ClientService<TcpStream, MetaClientProtocol>;
 
 type OneShotSender = oneshot::Sender<io::Result<ResponsePackage>>;
+
+type OneShotReceiver = oneshot::Receiver<io::Result<ResponsePackage>>;
 
 type ChannelSender = mpsc::UnboundedSender<(OneShotSender, RequestPackage)>;
 
 type ChannelReceiver = mpsc::UnboundedReceiver<(OneShotSender, RequestPackage)>;
 
 #[derive(Clone, Debug)]
-pub enum ChannelInitError {
+pub enum ChannelBuildError {
     AddrParseError,
+    ConnectError,
+}
+
+#[derive(Debug)]
+pub enum ChannelError {
+    ConcurrencyLimitReached,
+    IoError(io::Error),
     UnknownError,
 }
 
-impl From<AddrParseError> for ChannelInitError {
+impl From<AddrParseError> for ChannelBuildError {
     fn from(_: AddrParseError) -> Self {
-        ChannelInitError::AddrParseError
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct ChannelOption {
-    pub protocol: Protocol,
-    pub deadline: Duration,
-    pub max_retry: u32,
-}
-
-impl ChannelOption {
-    pub fn new() -> Self {
-        ChannelOption {
-            protocol: Protocol::Brpc,
-            deadline: Duration::from_secs(1),
-            max_retry: 3,
-        }
+        ChannelBuildError::AddrParseError
     }
 }
 
 pub struct MetaClientProtocol {
     proto: Box<RpcProtocol>,
+    handle: Handle,
+    addr: SocketAddr,
 }
 
 impl MetaClientProtocol {
-    pub fn new(option: &ChannelOption) -> Self {
-        let proto = match option.protocol {
+    pub fn new(proto_type: &Protocol, handle: Handle, addr: SocketAddr) -> Self {
+        let proto = match proto_type {
             // TODO: unify construction interface of protocols
-            Protocol::Brpc => Box::new(BrpcProtocol::new()),
+            &Protocol::Brpc => Box::new(BrpcProtocol::new()),
             _ => unimplemented!(),
         };
-        MetaClientProtocol { proto }
+        MetaClientProtocol {
+            proto,
+            handle,
+            addr,
+        }
     }
 }
 
-impl<T> ClientProto<T> for MetaClientProtocol
-where
-    T: AsyncRead + AsyncWrite + 'static,
-{
+impl ClientProto<TcpStream> for MetaClientProtocol {
     type Request = RequestPackage;
     type Response = ResponsePackage;
-    type Transport = Transport<Framed<T, ProtoCodecClient>>;
+    type Transport = Transport<Framed<Connector, ProtoCodecClient>>;
     type BindTransport = Result<Self::Transport, io::Error>;
 
-    fn bind_transport(&self, io: T) -> Self::BindTransport {
+    fn bind_transport(&self, io: TcpStream) -> Self::BindTransport {
+        let conn = Connector::from_stream(self.addr.clone(), io, self.handle.clone());
         let codec = ProtoCodecClient::new(self.proto.new_boxed());
-        let transport = Transport::new(io.framed(codec));
+        let transport = Transport::new(conn.framed(codec));
         Ok(transport)
     }
 }
 
-pub struct ChannelBuilder;
+#[derive(Debug)]
+enum ConnectMode {
+    Single(&'static str),
+}
+
+pub struct ChannelBuilder {
+    mode: ConnectMode,
+    handle: Handle,
+    protocol: Option<Protocol>,
+    deadline: Option<Option<Duration>>,
+    max_retry: Option<u32>,
+    max_concurrency: Option<u32>,
+}
 
 impl ChannelBuilder {
-    /// Connect to the server at X.X.X.X:port
-    pub fn single_server(
-        addr: &str,
-        handle: Handle,
-        option: ChannelOption,
-    ) -> ConnectFuture<ConcreteClientService> {
-        let socket_addr = match addr.parse() {
-            Ok(a) => a,
-            Err(_) => {
-                let err = Err(ChannelInitError::AddrParseError);
-                return Box::new(err.into_future());
-            }
-        };
+    pub fn single_server(addr: &'static str, handle: Handle) -> Self {
+        ChannelBuilder {
+            mode: ConnectMode::Single(addr),
+            handle: handle,
+            protocol: None,
+            deadline: None,
+            max_retry: None,
+            max_concurrency: None,
+        }
+    }
+
+    pub fn build(self) -> ChannelBuildFuture {
+        let protocol = self.protocol.unwrap_or(Protocol::Brpc);
+        let deadline = self.deadline.unwrap_or(None);
+        let max_retry = self.max_retry.unwrap_or(3);
+        let max_concurrency = self.max_concurrency.unwrap_or(1_000_000);
+        let handle = self.handle;
+
         let (tx, rx) = mpsc::unbounded();
-        let channel = Channel::new(tx);
+        let channel = Channel::new(tx, max_concurrency);
 
-        let fut = TcpClient::new(MetaClientProtocol::new(&option))
-            .connect(&socket_addr, &handle)
-            .map_err(|_| ChannelInitError::UnknownError)
-            .map(|service| {
-                info!("Channel connection established");
-                (channel, ChannelBackend::new(rx, handle, service))
-            });
+        match self.mode {
+            ConnectMode::Single(addr) => {
+                let parse = addr.parse::<SocketAddr>()
+                    .map_err(|_| ChannelBuildError::AddrParseError)
+                    .into_future();
+                let fut = parse.and_then(move |addr| {
+                    let proto = MetaClientProtocol::new(&protocol, handle.clone(), addr.clone());
+                    TcpClient::new(proto)
+                        .connect(&addr, &handle)
+                        .map_err(|_| ChannelBuildError::ConnectError)
+                        .map(move |end_port| {
+                            let lb = SingleServerLoadBalancer::new(end_port);
+                            let backend = ChannelBackend::new(rx, handle.clone(), lb);
+                            handle.spawn(backend);
+                            channel
+                        })
+                });
+                Box::new(fut)
+            }
+        }
+    }
+}
 
-        Box::new(fut)
+pub struct ChannelFuture {
+    rx: Option<OneShotReceiver>,
+    counter: Arc<AtomicUsize>,
+}
+
+impl ChannelFuture {
+    pub fn new(rx: Option<OneShotReceiver>, counter: Arc<AtomicUsize>) -> Self {
+        ChannelFuture { rx, counter }
+    }
+}
+
+impl Future for ChannelFuture {
+    type Item = ResponsePackage;
+
+    type Error = ChannelError;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        if let Some(ref mut rx) = self.rx {
+            let result = try_ready!(
+                rx.poll()
+                    .map_err(|_| panic!("The sending end of the oneshot is dropped"))
+            );
+            self.counter.fetch_sub(1, Ordering::Relaxed);
+
+            result
+                .map_err(|e| ChannelError::IoError(e))
+                .map(|resp| Async::Ready(resp))
+        } else {
+            Err(ChannelError::ConcurrencyLimitReached)
+        }
     }
 }
 
 #[derive(Clone)]
 pub struct Channel {
     sender: ChannelSender,
+    counter: Arc<AtomicUsize>,
+    max_concurrency: usize,
 }
 
 impl Channel {
-    pub fn new(sender: ChannelSender) -> Self {
-        Channel { sender }
+    pub fn new(sender: ChannelSender, max_concurrency: u32) -> Self {
+        Channel {
+            sender,
+            counter: Arc::new(AtomicUsize::new(0)),
+            max_concurrency: max_concurrency as usize,
+        }
     }
 
     pub fn call(&self, req: RequestPackage) -> ChannelFuture {
         let (tx, rx) = oneshot::channel();
-        let fut = self.sender
-            .unbounded_send((tx, req))
-            .map_err(|_| panic!("The receiving end of the mpsc is dropped."))
-            .into_future()
-            .and_then(|_| rx)
-            // TODO: maybe ignore this.
-            // refering to request cancelation.
-            .map_err(|_| panic!("The sending end of the oneshot is dropped"))
-            .and_then(|result| result);
-            
-        Box::new(fut)
-    }
-}
+        let rx = if self.counter.load(Ordering::Relaxed) < self.max_concurrency {
+            self.counter.fetch_add(1, Ordering::Relaxed);
+            self.sender
+                .unbounded_send((tx, req))
+                .expect("The receiving end is dropped");
+            Some(rx)
+        } else {
+            None
+        };
 
-#[must_use = "Channel backend should be spawned on an event loop, otherwise no request will be sent"]
-pub struct ChannelBackend<S> {
-    recv: ChannelReceiver,
-    handle: Handle,
-    abstract_service: S,
-}
-
-impl<S> ChannelBackend<S> {
-    pub fn new(
-        recv: ChannelReceiver,
-        handle: Handle,
-        abstract_service: S,
-    ) -> Self {
-        ChannelBackend {
-            recv,
-            handle,
-            abstract_service,
-        }
-    }
-}
-
-impl<S> ChannelBackend<S>
-where
-    S: Service<Request = RequestPackage, Response = ResponsePackage, Error = io::Error>,
-    S: 'static,
-{
-    fn spawn(&mut self, sender: OneShotSender, meta: RequestPackage) {
-        let fut = self.abstract_service
-            .call(meta)
-            .then(|result| sender.send(result))
-            // TODO: Or maybe just ignore this error, for the rpc request might be cancelled.
-            .map_err(|_| panic!("The receiving end of the oneshot is dropped."));
-        //debug!("Request sent through channel backend");
-        self.handle.spawn(fut);
-    }
-}
-
-impl<S> Future for ChannelBackend<S>
-where
-    S: Service<Request = RequestPackage, Response = ResponsePackage, Error = io::Error>,
-    S: 'static,
-{
-    type Item = ();
-    type Error = ();
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        loop {
-            match try_ready!(self.recv.poll()) {
-                Some((sender, meta)) => self.spawn(sender, meta),
-                None => return Ok(Async::Ready(())),
-            }
-        }
+        ChannelFuture::new(rx, self.counter.clone())
     }
 }

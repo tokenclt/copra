@@ -63,15 +63,15 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum MethodError {
     UnknownError,
-    CodecError(ProtobufError),
+    CodecError,
 }
 
 impl From<ProtobufError> for MethodError {
-    fn from(e: ProtobufError) -> Self {
-        MethodError::CodecError(e)
+    fn from(_: ProtobufError) -> Self {
+        MethodError::CodecError
     }
 }
 

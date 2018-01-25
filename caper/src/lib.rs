@@ -19,6 +19,7 @@ pub mod channel;
 pub mod controller;
 pub mod codec;
 pub mod dispatcher;
+pub mod load_balancer;
 pub mod message;
 pub mod protocol;
 pub mod service;
