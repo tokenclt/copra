@@ -78,12 +78,20 @@ impl<'a> {}<'a> {{
         gen = gen
             + &format!(
                 r#"
-    pub fn {}(&'a self, msg: {}) -> ::caper::stub::StubCallFuture<'a, {}> {{
+    pub fn {}(
+        &'a self, 
+        msg: {},
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            {},
+            {},
+        >,
+    > {{
         self.{}
             .call((msg, "{}".to_string(), "{}".to_string()))
     }}
 "#,
-                method, req, resp, wrap, service_name, method
+                method, req, resp, req, wrap, service_name, method
             );
     }
 

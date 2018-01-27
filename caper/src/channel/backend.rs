@@ -5,10 +5,9 @@ use tokio_core::reactor::Handle;
 use tokio_service::Service;
 
 use super::{ChannelReceiver, OneShotSender, RequestPackage, ResponsePackage};
-use load_balancer::{CallInfo, LoadBalance, ServerId};
+use load_balancer::LoadBalance;
 
-type FeedbackSender = oneshot::Sender<(ServerId, CallInfo)>;
-type FeedbackReceiver = oneshot::Receiver<(ServerId, CallInfo)>;
+use super::{FeedbackHandle, FeedbackReceiver};
 
 #[must_use = "Channel backend must be spawned in a reactor, otherwise no request will be sent"]
 pub struct ChannelBackend {
@@ -32,18 +31,17 @@ impl ChannelBackend {
     }
 
     fn spawn(&mut self, resp_sender: OneShotSender, req: RequestPackage) {
+        trace!("Spawned a new rpc request.");
+
         let (server_id, end_port) = self.lb.select_server();
         let (fb_sender, fb_recv) = oneshot::channel();
         let fut = end_port.call(req).then(move |result| {
+            let fb_handle = FeedbackHandle::new(server_id, fb_sender);
             // TODO: Or maybe just ignore this error, for the rpc request might be cancelled.
             resp_sender
-                .send(result)
+                .send(result.map(move |r| (r, fb_handle)))
                 .expect("The receiving end of the oneshot is dropped.");
-            // TODO: generate feedback
-            // FIXME: feedback info should be sent after the response reached the channel.
-            fb_sender
-                .send((server_id, CallInfo::default()))
-                .expect("The receiving end of the feedback channel is dropped.");
+
             Ok(())
         });
 

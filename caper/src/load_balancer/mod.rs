@@ -16,6 +16,12 @@ pub struct CallInfo {
     pub start_usec: u64,
 }
 
+impl CallInfo {
+    pub fn new(start_usec: u64, error: Option<MethodError>) -> Self {
+        CallInfo { start_usec, error }
+    }
+}
+
 pub trait LoadBalance {
     fn select_server(&mut self) -> (ServerId, &ServerEndPort);
 

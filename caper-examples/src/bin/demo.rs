@@ -11,7 +11,7 @@ extern crate tokio_service;
 extern crate tokio_timer;
 
 use caper::controller::Controller;
-use caper::channel::{ChannelBuilder, ChannelOption};
+use caper::channel::ChannelBuilder;
 use caper::dispatcher::ServiceRegistry;
 use caper::service::MethodError;
 use caper::server::ServerBuilder;
@@ -111,10 +111,8 @@ fn main() {
     thread::sleep(Duration::from_millis(100));
 
     //setup client
-    let option = ChannelOption::new();
-    let (channel, backend) = core.run(ChannelBuilder::single_server(addr, handle.clone(), option))
+    let channel = core.run(ChannelBuilder::single_server(addr, handle).build())
         .unwrap();
-    handle.spawn(backend);
 
     //create a stub for DemoService
     let stub = DemoStub::new(&channel);

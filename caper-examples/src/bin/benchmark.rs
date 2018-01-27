@@ -1,22 +1,26 @@
 extern crate caper;
 extern crate caper_examples;
 extern crate env_logger;
+#[macro_use]
 extern crate futures;
 extern crate protobuf;
 extern crate tokio_core;
 extern crate tokio_service;
 
 use caper::controller::Controller;
-use caper::channel::{ChannelBuilder, ChannelOption};
+use caper::codec::ProtobufCodec;
+use caper::channel::{Channel, ChannelBuilder};
 use caper::dispatcher::ServiceRegistry;
+use caper::stub::StubFuture;
 use caper::service::MethodError;
 use caper::server::ServerBuilder;
 use caper::protocol::http::HttpStatus;
 use caper_examples::protos::benchmark::{Empty, PressureRequest, StringMessage};
 use caper_examples::protos::benchmark_caper::{MetricRegistrant, MetricService, PressureRegistrant,
                                               PressureService, PressureStub};
-use futures::future::FutureResult;
-use futures::future;
+use futures::stream::futures_unordered::FuturesUnordered;
+use futures::{task, Async, Future, Poll, Stream};
+use futures::future::{self, FutureResult};
 use std::thread;
 use std::time::Duration;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -70,10 +74,45 @@ impl MetricService for Metric {
     }
 }
 
+struct Sender {
+    channel: Channel,
+    in_flight: FuturesUnordered<StubFuture<ProtobufCodec<StringMessage, StringMessage>>>,
+}
+
+impl Sender {
+    pub fn new(channel: Channel) -> Self {
+        Sender {
+            channel,
+            in_flight: FuturesUnordered::new(),
+        }
+    }
+}
+
+impl Future for Sender {
+    type Item = ();
+    type Error = ();
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        while !self.channel.congested() {
+            let stub = PressureStub::new(&self.channel);
+            let mut req = StringMessage::new();
+            req.set_msg("ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE".to_string());
+            let resp = stub.echo(req);
+            self.in_flight.push(resp);
+        }
+        loop {
+            if let None = try_ready!(self.in_flight.poll().map_err(|_| ())) {
+                task::current().notify();
+                return Ok(Async::NotReady);
+            }
+        }
+    }
+}
+
 fn main() {
     env_logger::init().unwrap();
 
-    let client_thread_num = 4;
+    let client_thread_num = 1;
     let addr = "127.0.0.1:8991";
     let mut core = Core::new().unwrap();
     let mut registry = ServiceRegistry::new();
@@ -85,7 +124,7 @@ fn main() {
     registry.register_service("Metric", registrant);
 
     let server = ServerBuilder::new(addr, registry)
-        .threads(2)
+        .threads(1)
         .throughput(throughtput, core.remote())
         .build();
 
@@ -97,24 +136,16 @@ fn main() {
     let _threads: Vec<_> = (0..client_thread_num)
         .map(|_| {
             thread::spawn(move || {
-                let channel_option = ChannelOption::new();
                 let mut core = Core::new().unwrap();
                 let handle = core.handle();
-                let (channel, backend) = core.run(ChannelBuilder::single_server(
-                    addr,
-                    handle.clone(),
-                    channel_option,
-                )).unwrap();
+                let channel = core.run(
+                    ChannelBuilder::single_server(addr, handle)
+                        .max_concurrency(1000)
+                        .build(),
+                ).unwrap();
 
-                handle.spawn(backend);
-
-                let pressure = PressureStub::new(&channel);
-                loop {
-                    let mut req = StringMessage::new();
-                    req.set_msg("ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE_ABCDE".to_string());
-                    let resp = pressure.echo(req);
-                    core.run(resp).unwrap();
-                }
+                let sender = Sender::new(channel);
+                core.run(sender).unwrap();
             })
         })
         .collect();

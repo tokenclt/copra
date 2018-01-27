@@ -132,12 +132,28 @@ impl<'a> EchoStub<'a> {
 
         }
     }
-    pub fn echo(&'a self, msg: super::echo::EchoRequest) -> ::caper::stub::StubCallFuture<'a, super::echo::EchoResponse> {
+    pub fn echo(
+        &'a self, 
+        msg: super::echo::EchoRequest,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::echo::EchoResponse,
+            super::echo::EchoRequest,
+        >,
+    > {
         self.echo_wrapper
             .call((msg, "Echo".to_string(), "echo".to_string()))
     }
 
-    pub fn rev_echo(&'a self, msg: super::echo::EchoRequest) -> ::caper::stub::StubCallFuture<'a, super::echo::EchoResponse> {
+    pub fn rev_echo(
+        &'a self, 
+        msg: super::echo::EchoRequest,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::echo::EchoResponse,
+            super::echo::EchoRequest,
+        >,
+    > {
         self.rev_echo_wrapper
             .call((msg, "Echo".to_string(), "rev_echo".to_string()))
     }

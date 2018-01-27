@@ -51,6 +51,8 @@ impl<T: AsyncRead> AsyncRead for TcpConnection<T> {
     fn read_buf<B: BufMut>(&mut self, buf: &mut B) -> Poll<usize, io::Error> {
         // signal EOF
         if self.idle_timeout.is_expired() {
+            // TODO: log IP
+            trace!("Server closed a connection due to idle timeout");
             return Ok(Async::Ready(0));
         }
 

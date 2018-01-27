@@ -65,6 +65,7 @@ where
 
 #[derive(Clone, Debug)]
 pub enum MethodError {
+    ChannelConcurrencyLimited,
     UnknownError,
     CodecError,
 }

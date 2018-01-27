@@ -132,12 +132,28 @@ impl<'a> HelloStub<'a> {
 
         }
     }
-    pub fn hello_general(&'a self, msg: super::http_hello::HelloRequest) -> ::caper::stub::StubCallFuture<'a, super::http_hello::HelloResponse> {
+    pub fn hello_general(
+        &'a self, 
+        msg: super::http_hello::HelloRequest,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::http_hello::HelloResponse,
+            super::http_hello::HelloRequest,
+        >,
+    > {
         self.hello_general_wrapper
             .call((msg, "Hello".to_string(), "hello_general".to_string()))
     }
 
-    pub fn hello_to(&'a self, msg: super::http_hello::HelloRequest) -> ::caper::stub::StubCallFuture<'a, super::http_hello::HelloResponse> {
+    pub fn hello_to(
+        &'a self, 
+        msg: super::http_hello::HelloRequest,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::http_hello::HelloResponse,
+            super::http_hello::HelloRequest,
+        >,
+    > {
         self.hello_to_wrapper
             .call((msg, "Hello".to_string(), "hello_to".to_string()))
     }

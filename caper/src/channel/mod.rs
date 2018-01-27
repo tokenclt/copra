@@ -16,6 +16,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;
 
 use protocol::{BrpcProtocol, ProtoCodecClient, Protocol, RpcProtocol};
+use load_balancer::{CallInfo, ServerId};
 use load_balancer::single_server::SingleServerLoadBalancer;
 use message::{RpcRequestMeta, RpcResponseMeta};
 use self::transport::Transport;
@@ -31,11 +32,13 @@ type ResponsePackage = (RpcResponseMeta, Bytes);
 
 pub type ChannelBuildFuture = Box<Future<Item = Channel, Error = ChannelBuildError>>;
 
-//type ConcreteClientService = ClientService<TcpStream, MetaClientProtocol>;
+type FeedbackSender = oneshot::Sender<(ServerId, CallInfo)>;
 
-type OneShotSender = oneshot::Sender<io::Result<ResponsePackage>>;
+type FeedbackReceiver = oneshot::Receiver<(ServerId, CallInfo)>;
 
-type OneShotReceiver = oneshot::Receiver<io::Result<ResponsePackage>>;
+type OneShotSender = oneshot::Sender<io::Result<(ResponsePackage, FeedbackHandle)>>;
+
+type OneShotReceiver = oneshot::Receiver<io::Result<(ResponsePackage, FeedbackHandle)>>;
 
 type ChannelSender = mpsc::UnboundedSender<(OneShotSender, RequestPackage)>;
 
@@ -121,6 +124,26 @@ impl ChannelBuilder {
         }
     }
 
+    pub fn protocol(mut self, protocol: Protocol) -> Self {
+        self.protocol = Some(protocol);
+        self
+    }
+
+    pub fn deadline(mut self, deadline: Option<Duration>) -> Self {
+        self.deadline = Some(deadline);
+        self
+    }
+
+    pub fn max_retry(mut self, max_retry: u32) -> Self {
+        self.max_retry = Some(max_retry);
+        self
+    }
+
+    pub fn max_concurrency(mut self, max_concurrency: u32) -> Self {
+        self.max_concurrency = Some(max_concurrency);
+        self
+    }
+
     pub fn build(self) -> ChannelBuildFuture {
         let protocol = self.protocol.unwrap_or(Protocol::Brpc);
         let deadline = self.deadline.unwrap_or(None);
@@ -166,7 +189,7 @@ impl ChannelFuture {
 }
 
 impl Future for ChannelFuture {
-    type Item = ResponsePackage;
+    type Item = (ResponsePackage, FeedbackHandle);
 
     type Error = ChannelError;
 
@@ -187,7 +210,7 @@ impl Future for ChannelFuture {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Channel {
     sender: ChannelSender,
     counter: Arc<AtomicUsize>,
@@ -205,8 +228,8 @@ impl Channel {
 
     pub fn call(&self, req: RequestPackage) -> ChannelFuture {
         let (tx, rx) = oneshot::channel();
-        let rx = if self.counter.load(Ordering::Relaxed) < self.max_concurrency {
-            self.counter.fetch_add(1, Ordering::Relaxed);
+        let rx = if self.counter.load(Ordering::SeqCst) < self.max_concurrency {
+            self.counter.fetch_add(1, Ordering::SeqCst);
             self.sender
                 .unbounded_send((tx, req))
                 .expect("The receiving end is dropped");
@@ -216,5 +239,32 @@ impl Channel {
         };
 
         ChannelFuture::new(rx, self.counter.clone())
+    }
+
+    pub fn congested(&self) -> bool {
+        let current = self.counter.load(Ordering::Relaxed);
+        current >= self.max_concurrency
+    }
+}
+
+#[derive(Debug)]
+pub struct FeedbackHandle {
+    id: ServerId,
+    sender: FeedbackSender,
+}
+
+impl FeedbackHandle {
+    pub fn new(id: ServerId, sender: FeedbackSender) -> Self {
+        FeedbackHandle { id, sender }
+    }
+
+    pub fn server_id(&self) -> ServerId {
+        self.id
+    }
+
+    pub fn call(self, info: CallInfo) {
+        self.sender
+            .send((self.id, info))
+            .expect("The receiving end of the feedback channel is dropped");
     }
 }

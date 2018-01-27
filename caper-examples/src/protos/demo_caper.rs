@@ -132,12 +132,28 @@ impl<'a> DemoStub<'a> {
 
         }
     }
-    pub fn greet_to(&'a self, msg: super::demo::GreetMessage) -> ::caper::stub::StubCallFuture<'a, super::demo::GreetMessage> {
+    pub fn greet_to(
+        &'a self, 
+        msg: super::demo::GreetMessage,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::demo::GreetMessage,
+            super::demo::GreetMessage,
+        >,
+    > {
         self.greet_to_wrapper
             .call((msg, "Demo".to_string(), "greet_to".to_string()))
     }
 
-    pub fn is_prime(&'a self, msg: super::demo::PrimeRequest) -> ::caper::stub::StubCallFuture<'a, super::demo::PrimeResponse> {
+    pub fn is_prime(
+        &'a self, 
+        msg: super::demo::PrimeRequest,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::demo::PrimeResponse,
+            super::demo::PrimeRequest,
+        >,
+    > {
         self.is_prime_wrapper
             .call((msg, "Demo".to_string(), "is_prime".to_string()))
     }

@@ -87,7 +87,15 @@ impl<'a> MetricStub<'a> {
 
         }
     }
-    pub fn metric(&'a self, msg: super::benchmark::Empty) -> ::caper::stub::StubCallFuture<'a, super::benchmark::Empty> {
+    pub fn metric(
+        &'a self, 
+        msg: super::benchmark::Empty,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::benchmark::Empty,
+            super::benchmark::Empty,
+        >,
+    > {
         self.metric_wrapper
             .call((msg, "Metric".to_string(), "metric".to_string()))
     }
@@ -221,12 +229,28 @@ impl<'a> PressureStub<'a> {
 
         }
     }
-    pub fn echo(&'a self, msg: super::benchmark::StringMessage) -> ::caper::stub::StubCallFuture<'a, super::benchmark::StringMessage> {
+    pub fn echo(
+        &'a self, 
+        msg: super::benchmark::StringMessage,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::benchmark::StringMessage,
+            super::benchmark::StringMessage,
+        >,
+    > {
         self.echo_wrapper
             .call((msg, "Pressure".to_string(), "echo".to_string()))
     }
 
-    pub fn process(&'a self, msg: super::benchmark::PressureRequest) -> ::caper::stub::StubCallFuture<'a, super::benchmark::Empty> {
+    pub fn process(
+        &'a self, 
+        msg: super::benchmark::PressureRequest,
+    ) -> ::caper::stub::StubFuture<
+        ::caper::codec::ProtobufCodec<
+            super::benchmark::Empty,
+            super::benchmark::PressureRequest,
+        >,
+    > {
         self.process_wrapper
             .call((msg, "Pressure".to_string(), "process".to_string()))
     }

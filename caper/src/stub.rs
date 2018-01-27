@@ -1,16 +1,14 @@
 use bytes::Bytes;
-use futures::{Future, IntoFuture};
+use futures::{Async, Future, IntoFuture, Poll};
 use std::io;
 
 use codec::MethodCodec;
-use channel::{Channel, ChannelError};
-
+use channel::{Channel, ChannelError, ChannelFuture};
+use load_balancer::CallInfo;
 use message::{RpcRequestMeta, RpcResponseMeta};
 use service::MethodError;
 
 type ResponsePackage = (RpcResponseMeta, Bytes);
-
-pub type StubCallFuture<'a, T> = Box<Future<Item = (T, RpcInfo), Error = MethodError> + 'a>;
 
 #[derive(Clone)]
 pub struct RpcWrapper<'a, C: Clone> {
@@ -29,47 +27,79 @@ where
     C: MethodCodec + Clone,
 {
     // inverse of request and response
-    pub fn call(&'a self, bundle: (C::Response, String, String)) -> StubCallFuture<'a, C::Request> {
+    pub fn call(&'a self, bundle: (C::Response, String, String)) -> StubFuture<C> {
         let (req, service_name, method_name) = bundle;
-        let body = self.codec.encode(req).into_future();
-
-        let response = body.map_err(|_| MethodError::UnknownError)
-            .and_then(move |body| {
+        let channel_fut = match self.codec.encode(req) {
+            Ok(body) => {
                 let mut meta = RpcRequestMeta::new();
                 meta.set_service_name(service_name);
                 meta.set_method_name(method_name);
-                self.channel
-                    .call((meta, body))
-                    .then(|resp| errno_to_result(resp))
-            })
-            .and_then(move |body| {
-                self.codec
-                    .decode(body)
-                    .map_err(|_| MethodError::UnknownError)
-            })
-            .map(|resp| (resp, RpcInfo));
+                Some(self.channel.call((meta, body)))
+            }
+            Err(_) => None,
+        };
 
-        Box::new(response)
+        StubFuture::new(channel_fut, self.codec.clone())
     }
 }
 
-fn errno_to_result(result: Result<ResponsePackage, ChannelError>) -> Result<Bytes, MethodError> {
-    result
-        .map_err(|_| MethodError::UnknownError)
-        .and_then(|(meta, body)| {
-            let error_code = meta.get_error_code();
-            if error_code == 0 {
-                Ok(body)
-            } else {
-                error!("Server mark rpc to failed");
-                Err(MethodError::UnknownError)
-            }
-        })
+fn errno_to_result(result: ResponsePackage) -> Result<Bytes, MethodError> {
+    let (meta, body) = result;
+    let error_code = meta.get_error_code();
+    if error_code == 0 {
+        Ok(body)
+    } else {
+        error!("Server mark rpc to failed");
+        Err(MethodError::UnknownError)
+    }
 }
 
+pub struct StubFuture<C> {
+    start_usec: u64,
+    inner: Option<ChannelFuture>,
+    codec: C,
+}
 
-pub struct Retry;
+impl<C> StubFuture<C> {
+    pub fn new(inner: Option<ChannelFuture>, codec: C) -> Self {
+        StubFuture {
+            start_usec: 0,
+            inner,
+            codec,
+        }
+    }
+}
 
-pub struct RpcOption;
+impl<C> Future for StubFuture<C>
+where
+    C: MethodCodec,
+{
+    type Item = (C::Request, RpcInfo);
+
+    type Error = MethodError;
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        if let Some(ref mut channel) = self.inner {
+            match channel.poll() {
+                Ok(Async::Ready((resp, fb_handle))) => {
+                    let body = errno_to_result(resp)?;
+                    let resp = self.codec
+                        .decode(body)
+                        .map_err(|_| MethodError::CodecError)?;
+                    let fb = CallInfo::new(self.start_usec, None);
+                    let info = RpcInfo;
+                    fb_handle.call(fb);
+
+                    Ok(Async::Ready((resp, info)))
+                }
+                Ok(Async::NotReady) => Ok(Async::NotReady),
+                // TODO: Add error convertion
+                Err(_) => Err(MethodError::UnknownError),
+            }
+        } else {
+            Err(MethodError::CodecError)
+        }
+    }
+}
 
 pub struct RpcInfo;

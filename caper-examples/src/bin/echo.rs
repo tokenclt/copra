@@ -14,7 +14,7 @@ use tokio_core::reactor::Core;
 use caper::dispatcher::ServiceRegistry;
 use caper::service::MethodError;
 use caper::controller::Controller;
-use caper::channel::{ChannelBuilder, ChannelOption};
+use caper::channel::ChannelBuilder;
 use caper::server::ServerBuilder;
 
 use caper_examples::protos::echo::{EchoRequest, EchoResponse};
@@ -66,7 +66,6 @@ fn main() {
     let mut registry = ServiceRegistry::new();
     registry.register_service("Echo", registrant);
 
-    let channel_option = ChannelOption::new();
     thread::spawn(move || {
         let server = ServerBuilder::new(addr, registry).build();
         server.start();
@@ -74,13 +73,8 @@ fn main() {
 
     thread::sleep(Duration::from_millis(100));
 
-    let (channel, backend) = core.run(ChannelBuilder::single_server(
-        addr,
-        handle.clone(),
-        channel_option,
-    )).unwrap();
-
-    handle.spawn(backend);
+    let channel = core.run(ChannelBuilder::single_server(addr, handle).build())
+        .unwrap();
 
     let echo = EchoStub::new(&channel);
 
