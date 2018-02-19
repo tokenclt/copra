@@ -2,7 +2,6 @@ use tokio_core::net::TcpStream;
 use tokio_proto::multiplex::ClientService;
 
 use channel::MetaClientProtocol;
-use channel::connector::Connector;
 use service::MethodError;
 
 pub mod single_server;

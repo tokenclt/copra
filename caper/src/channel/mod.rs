@@ -1,12 +1,11 @@
 use bytes::Bytes;
 use tokio_core::net::TcpStream;
 use tokio_core::reactor::Handle;
-use tokio_io::{AsyncRead, AsyncWrite};
+use tokio_io::AsyncRead;
 use tokio_io::codec::Framed;
-use tokio_proto::multiplex::{ClientProto, ClientService};
+use tokio_proto::multiplex::ClientProto;
 use tokio_proto::TcpClient;
-use tokio_service::Service;
-use futures::{Async, Future, IntoFuture, Poll, Stream};
+use futures::{Async, Future, IntoFuture, Poll};
 use futures::sync::mpsc;
 use futures::sync::oneshot;
 use std::io;
@@ -146,8 +145,9 @@ impl ChannelBuilder {
 
     pub fn build(self) -> ChannelBuildFuture {
         let protocol = self.protocol.unwrap_or(Protocol::Brpc);
-        let deadline = self.deadline.unwrap_or(None);
-        let max_retry = self.max_retry.unwrap_or(3);
+        // TODO: add timeout and retry
+        let _deadline = self.deadline.unwrap_or(None);
+        let _max_retry = self.max_retry.unwrap_or(3);
         let max_concurrency = self.max_concurrency.unwrap_or(1_000_000);
         let handle = self.handle;
 

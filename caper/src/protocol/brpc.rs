@@ -1,7 +1,7 @@
 use bytes::{BigEndian, Buf, BufMut, Bytes, BytesMut, IntoBuf};
 use std::io;
 use tokio_proto::multiplex::RequestId;
-use protobuf::{parse_from_carllerche_bytes, CodedOutputStream, Message};
+use protobuf::{parse_from_carllerche_bytes, Message};
 
 use super::{ProtocolError, RpcProtocol};
 use controller::Controller;

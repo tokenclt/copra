@@ -2,19 +2,15 @@ extern crate caper;
 extern crate caper_examples;
 extern crate env_logger;
 extern crate futures;
-extern crate protobuf;
 extern crate tokio_core;
 
-use caper::controller::Controller;
+use caper::{Controller, MethodError, ServerBuilder, ServiceRegistry};
 use caper::protocol::http::HttpStatus;
-use caper::service::MethodError;
-use caper::server::ServerBuilder;
-use caper::dispatcher::ServiceRegistry;
+use futures::future::{self, FutureResult};
+use std::mem::replace;
+
 use caper_examples::protos::http_hello::{HelloRequest, HelloResponse};
 use caper_examples::protos::http_hello_caper::{HelloRegistrant, HelloService};
-use futures::future::FutureResult;
-use futures::future;
-use std::mem::replace;
 
 #[derive(Clone)]
 struct Hello;

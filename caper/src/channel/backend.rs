@@ -4,7 +4,7 @@ use futures::sync::oneshot;
 use tokio_core::reactor::Handle;
 use tokio_service::Service;
 
-use super::{ChannelReceiver, OneShotSender, RequestPackage, ResponsePackage};
+use super::{ChannelReceiver, OneShotSender, RequestPackage};
 use load_balancer::LoadBalance;
 
 use super::{FeedbackHandle, FeedbackReceiver};

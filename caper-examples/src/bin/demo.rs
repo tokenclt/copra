@@ -4,30 +4,23 @@ extern crate env_logger;
 extern crate futures;
 extern crate futures_cpupool;
 extern crate primal;
-extern crate protobuf;
 extern crate rand;
 extern crate tokio_core;
-extern crate tokio_service;
 extern crate tokio_timer;
 
-use caper::controller::Controller;
-use caper::channel::ChannelBuilder;
-use caper::dispatcher::ServiceRegistry;
-use caper::service::MethodError;
-use caper::server::ServerBuilder;
-use caper_examples::protos::demo::{GreetMessage, PrimeRequest, PrimeResponse};
-use caper_examples::protos::demo_caper::{DemoRegistrant, DemoService, DemoStub};
-use futures::Future;
-use futures::future::FutureResult;
-use futures::future;
+use caper::{ChannelBuilder, Controller, MethodError, ServerBuilder, ServiceRegistry};
+use futures::future::{self, Future, FutureResult};
 use futures_cpupool::CpuPool;
+use primal::is_prime;
 use rand::Rng;
 use std::thread;
 use std::time::Duration;
 use std::sync::Arc;
 use tokio_core::reactor::Core;
 use tokio_timer::Timer;
-use primal::is_prime;
+
+use caper_examples::protos::demo::{GreetMessage, PrimeRequest, PrimeResponse};
+use caper_examples::protos::demo_caper::{DemoRegistrant, DemoService, DemoStub};
 
 #[derive(Clone)]
 struct Demo {

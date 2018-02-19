@@ -3,6 +3,7 @@ name = "caper-examples"
 version = "0.0.0"
 authors = ["AprliRainkun <zmy.2347@sjtu.edu.cn>"]
 
+#TODO: seperate dependencies for each binary
 [dependencies]
 caper = { path = "../caper" }
 env_logger = "0.4"
@@ -13,8 +14,6 @@ primal = "0.2"
 rand = "0.4"
 tokio-io = "0.1"
 tokio-core = "0.1"
-tokio-proto = "0.1"
-tokio-service = "0.1"
 tokio-timer = "0.1"
 
 [build-dependencies]

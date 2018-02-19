@@ -3,24 +3,19 @@ extern crate caper_examples;
 extern crate env_logger;
 #[macro_use]
 extern crate futures;
-extern crate protobuf;
 extern crate tokio_core;
-extern crate tokio_service;
 
-use caper::controller::Controller;
+use caper::{ChannelBuilder, Controller, MethodError, ServerBuilder, ServiceRegistry};
 use caper::codec::ProtobufCodec;
-use caper::channel::{Channel, ChannelBuilder};
-use caper::dispatcher::ServiceRegistry;
+use caper::channel::Channel;
 use caper::stub::StubFuture;
-use caper::service::MethodError;
-use caper::server::ServerBuilder;
 use caper::protocol::http::HttpStatus;
 use caper_examples::protos::benchmark::{Empty, PressureRequest, StringMessage};
 use caper_examples::protos::benchmark_caper::{MetricRegistrant, MetricService, PressureRegistrant,
                                               PressureService, PressureStub};
 use futures::stream::futures_unordered::FuturesUnordered;
-use futures::{task, Async, Future, Poll, Stream};
-use futures::future::{self, FutureResult};
+use futures::{task, Async, Poll, Stream};
+use futures::future::{self, Future, FutureResult};
 use std::thread;
 use std::time::Duration;
 use std::sync::atomic::{AtomicUsize, Ordering};

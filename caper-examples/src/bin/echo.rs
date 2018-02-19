@@ -2,20 +2,13 @@ extern crate caper;
 extern crate caper_examples;
 extern crate env_logger;
 extern crate futures;
-extern crate protobuf;
 extern crate tokio_core;
-extern crate tokio_proto;
-extern crate tokio_service;
 
+use caper::{ChannelBuilder, Controller, MethodError, ServerBuilder, ServiceRegistry};
 use futures::{Future, IntoFuture};
 use std::thread;
 use std::time::Duration;
 use tokio_core::reactor::Core;
-use caper::dispatcher::ServiceRegistry;
-use caper::service::MethodError;
-use caper::controller::Controller;
-use caper::channel::ChannelBuilder;
-use caper::server::ServerBuilder;
 
 use caper_examples::protos::echo::{EchoRequest, EchoResponse};
 use caper_examples::protos::echo_caper::{EchoRegistrant, EchoService, EchoStub};

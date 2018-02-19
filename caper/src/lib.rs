@@ -15,6 +15,12 @@ extern crate url;
 #[cfg(test)]
 extern crate rand;
 
+pub use channel::ChannelBuilder;
+pub use controller::Controller;
+pub use dispatcher::ServiceRegistry;
+pub use server::ServerBuilder;
+pub use service::MethodError;
+
 pub mod channel;
 pub mod controller;
 pub mod codec;

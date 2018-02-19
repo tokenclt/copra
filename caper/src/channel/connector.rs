@@ -1,4 +1,3 @@
-use bytes::{Buf, BufMut};
 use futures::{Async, Future, Poll};
 use std::io::{self, ErrorKind, Read, Write};
 use std::mem;
@@ -20,15 +19,6 @@ pub struct Connector {
 }
 
 impl Connector {
-    pub fn new(addr: SocketAddr, handle: Handle) -> Self {
-        let new = TcpStream::connect(&addr, &handle);
-        Connector {
-            addr,
-            state: State::Connecting(new),
-            handle,
-        }
-    }
-
     pub fn from_stream(addr: SocketAddr, stream: TcpStream, handle: Handle) -> Self {
         Connector {
             addr,
@@ -70,13 +60,20 @@ impl Read for Connector {
                 State::Connected(mut io) => {
                     let r = io.read(buf);
                     match r {
-                        Ok(_) => self.state = State::Connected(io),
-                        Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
-                            self.state = State::Connected(io)
+                        Ok(_) => {
+                            self.state = State::Connected(io);
+                            return r;
                         }
-                        _ => {}
+                        Err(e) => {
+                            if e.kind() == ErrorKind::WouldBlock {
+                                self.state = State::Connected(io);
+                                return Err(e);
+                            }
+                            // TODO: elaborate err conditions.
+                            // Currently we assume all the errors except for Wouldblock
+                            // are caused by a broken connection.
+                        }
                     };
-                    return r;
                 }
                 State::Connecting(mut fut) => match fut.poll()? {
                     Async::Ready(io) => {
@@ -105,13 +102,17 @@ impl Write for Connector {
                 State::Connected(mut io) => {
                     let r = io.write(buf);
                     match r {
-                        Ok(_) => self.state = State::Connected(io),
-                        Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
-                            self.state = State::Connected(io)
+                        Ok(_) => {
+                            self.state = State::Connected(io);
+                            return r;
                         }
-                        _ => {}
+                        Err(e) => {
+                            if e.kind() == ErrorKind::WouldBlock {
+                                self.state = State::Connected(io);
+                                return Err(e);
+                            }
+                        }
                     };
-                    return r;
                 }
                 State::Connecting(mut fut) => match fut.poll()? {
                     Async::Ready(io) => {
@@ -138,13 +139,17 @@ impl Write for Connector {
                 State::Connected(mut io) => {
                     let r = io.flush();
                     match r {
-                        Ok(_) => self.state = State::Connected(io),
-                        Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
-                            self.state = State::Connected(io)
+                        Ok(_) => {
+                            self.state = State::Connected(io);
+                            return r;
                         }
-                        _ => {}
+                        Err(e) => {
+                            if e.kind() == ErrorKind::WouldBlock {
+                                self.state = State::Connected(io);
+                                return Err(e);
+                            }
+                        }
                     };
-                    return r;
                 }
                 State::Connecting(mut fut) => match fut.poll()? {
                     Async::Ready(io) => {
@@ -187,24 +192,5 @@ impl AsyncWrite for Connector {
             }
             State::Disconnected => Ok(Async::Ready(())),
         }
-    }
-}
-
-pub struct ConnectorInit {
-    new: TcpStreamNew,
-    other: Option<(SocketAddr, Handle)>,
-}
-
-impl Future for ConnectorInit {
-    type Item = Connector;
-    type Error = io::Error;
-
-    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        let stream = try_ready!(self.new.poll());
-        let (addr, handle) = mem::replace(&mut self.other, None)
-            .expect("ConnectorInit can not be polled after returning Async::Ready");
-        let conn = Connector::from_stream(addr, stream, handle);
-
-        Ok(Async::Ready(conn))
     }
 }

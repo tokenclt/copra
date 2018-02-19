@@ -1,9 +1,8 @@
 use bytes::Bytes;
-use futures::{Async, Future, IntoFuture, Poll};
-use std::io;
+use futures::{Async, Future, Poll};
 
 use codec::MethodCodec;
-use channel::{Channel, ChannelError, ChannelFuture};
+use channel::{Channel, ChannelFuture};
 use load_balancer::CallInfo;
 use message::{RpcRequestMeta, RpcResponseMeta};
 use service::MethodError;
