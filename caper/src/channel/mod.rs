@@ -19,18 +19,18 @@ use protocol::{BrpcProtocol, ProtoCodecClient, Protocol, RpcProtocol};
 use load_balancer::{CallInfo, ServerId};
 use load_balancer::single_server::SingleServerLoadBalancer;
 use message::{RpcRequestMeta, RpcResponseMeta};
-use self::transport::Transport;
+
 use self::backend::ChannelBackend;
 use self::connector::Connector;
 
-pub mod backend;
-pub mod connector;
-pub mod transport;
-
-type RequestPackage = (RpcRequestMeta, Bytes);
-type ResponsePackage = (RpcResponseMeta, Bytes);
+mod backend;
+pub(crate) mod connector;
 
 pub type ChannelBuildFuture = Box<Future<Item = Channel, Error = ChannelBuildError>>;
+
+type RequestPackage = (RpcRequestMeta, Bytes);
+
+type ResponsePackage = (RpcResponseMeta, Bytes);
 
 type FeedbackSender = oneshot::Sender<(ServerId, CallInfo)>;
 
@@ -87,14 +87,14 @@ impl MetaClientProtocol {
 impl ClientProto<TcpStream> for MetaClientProtocol {
     type Request = RequestPackage;
     type Response = ResponsePackage;
-    type Transport = Transport<Framed<Connector, ProtoCodecClient>>;
+    type Transport = Framed<Connector, ProtoCodecClient>;
     type BindTransport = Result<Self::Transport, io::Error>;
 
     fn bind_transport(&self, io: TcpStream) -> Self::BindTransport {
         let conn = Connector::from_stream(self.addr.clone(), io, self.handle.clone());
         let codec = ProtoCodecClient::new(self.proto.new_boxed());
-        let transport = Transport::new(conn.framed(codec));
-        Ok(transport)
+        let framed = conn.framed(codec);
+        Ok(framed)
     }
 }
 

@@ -168,35 +168,9 @@ impl Write for Connector {
 
 impl AsyncRead for Connector {
     // Ported from <TcpStream as AsyncRead>
-    unsafe fn prepare_uninitialized_buffer(&self, buf: &mut [u8]) -> bool {
+    unsafe fn prepare_uninitialized_buffer(&self, _: &mut [u8]) -> bool {
         false
     }
-
-    // fn read_buf<B: BufMut>(&mut self, buf: &mut B) -> Poll<usize, io::Error> {
-    //     loop {
-    //         match mem::replace(&mut self.state, State::Disconnected) {
-    //             State::Connected(mut io) => {
-    //                 let r = io.read_buf(buf);
-    //                 if r.is_ok() {
-    //                     self.state = State::Connected(io);
-    //                 }
-    //                 return r;
-    //             }
-    //             State::Connecting(mut fut) => match fut.poll()? {
-    //                 Async::Ready(io) => {
-    //                     self.state = State::Connected(io);
-    //                 }
-    //                 Async::NotReady => {
-    //                     self.state = State::Connecting(fut);
-    //                     return Ok(Async::NotReady);
-    //                 }
-    //             },
-    //             State::Disconnected => {
-    //                 self.reconnect();
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 impl AsyncWrite for Connector {
@@ -214,32 +188,6 @@ impl AsyncWrite for Connector {
             State::Disconnected => Ok(Async::Ready(())),
         }
     }
-
-    // fn write_buf<B: Buf>(&mut self, buf: &mut B) -> Poll<usize, io::Error> {
-    //     loop {
-    //         match mem::replace(&mut self.state, State::Disconnected) {
-    //             State::Connected(mut io) => {
-    //                 let r = io.write_buf(buf);
-    //                 if r.is_ok() {
-    //                     self.state = State::Connected(io);
-    //                 }
-    //                 return r;
-    //             }
-    //             State::Connecting(mut fut) => match fut.poll()? {
-    //                 Async::Ready(io) => {
-    //                     self.state = State::Connected(io);
-    //                 }
-    //                 Async::NotReady => {
-    //                     self.state = State::Connecting(fut);
-    //                     return Ok(Async::NotReady);
-    //                 }
-    //             },
-    //             State::Disconnected => {
-    //                 self.reconnect();
-    //             }
-    //         }
-    //     }
-    // }
 }
 
 pub struct ConnectorInit {
