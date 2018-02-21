@@ -15,7 +15,7 @@ pub trait MethodCodec {
     fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error>;
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ProtobufCodec<T, U> {
     phantom: PhantomData<(T, U)>,
 }

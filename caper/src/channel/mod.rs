@@ -8,6 +8,7 @@ use tokio_proto::TcpClient;
 use futures::{Async, Future, IntoFuture, Poll};
 use futures::sync::mpsc;
 use futures::sync::oneshot;
+use std::fmt;
 use std::io;
 use std::net::{AddrParseError, SocketAddr};
 use std::sync::Arc;
@@ -102,6 +103,7 @@ enum ConnectMode {
     Single(&'static str),
 }
 
+#[derive(Debug)]
 pub struct ChannelBuilder {
     mode: ConnectMode,
     handle: Handle,
@@ -177,6 +179,7 @@ impl ChannelBuilder {
     }
 }
 
+#[derive(Debug)]
 pub struct ChannelFuture {
     rx: Option<OneShotReceiver>,
     counter: Arc<AtomicUsize>,

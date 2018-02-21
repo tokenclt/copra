@@ -1,4 +1,5 @@
 use futures::{Async, Future, Poll};
+use std::fmt;
 use std::io::{self, ErrorKind, Read, Write};
 use std::mem;
 use std::net::SocketAddr;
@@ -12,6 +13,17 @@ enum State {
     Disconnected,
 }
 
+impl fmt::Debug for State {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            State::Connected(ref tcp) => write!(f, "State::Connected({:?})", tcp),
+            State::Connecting(_) => write!(f, "State::Connecting"),
+            State::Disconnected => write!(f, "State::Disconnected"),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Connector {
     addr: SocketAddr,
     state: State,

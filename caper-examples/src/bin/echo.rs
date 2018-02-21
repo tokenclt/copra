@@ -7,7 +7,6 @@ extern crate tokio_core;
 use caper::{ChannelBuilder, Controller, MethodError, ServerBuilder, ServiceRegistry};
 use futures::{Future, IntoFuture};
 use std::thread;
-use std::time::Duration;
 use tokio_core::reactor::Core;
 
 use caper_examples::protos::echo::{EchoRequest, EchoResponse};
@@ -64,7 +63,7 @@ fn main() {
         server.start();
     });
 
-    thread::sleep(Duration::from_millis(100));
+    //thread::sleep(Duration::from_millis(100));
 
     let channel = core.run(ChannelBuilder::single_server(addr, handle).build())
         .unwrap();
