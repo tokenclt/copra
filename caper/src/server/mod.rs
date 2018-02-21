@@ -1,10 +1,11 @@
 use bytes::Bytes;
 use tokio_core::reactor::Remote;
 use tokio_proto::TcpServer;
-use tokio_proto::multiplex::{Multiplex};
+use tokio_proto::multiplex::Multiplex;
 use tokio_service::{NewService, Service};
 use tokio_timer::Timer;
 use std::io;
+use std::net::AddrParseError;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 use futures::{Future, IntoFuture, Stream};
@@ -79,6 +80,17 @@ impl NewService for MetaService {
     }
 }
 
+#[derive(Clone, Debug)]
+pub enum ServerBuildError {
+    AddrParseError(AddrParseError),
+}
+
+impl From<AddrParseError> for ServerBuildError {
+    fn from(e: AddrParseError) -> Self {
+        ServerBuildError::AddrParseError(e)
+    }
+}
+
 pub struct ServerBuilder<'a> {
     services: ServiceRegistry,
     addr: &'a str,
@@ -123,7 +135,7 @@ impl<'a> ServerBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Server {
+    pub fn build(self) -> Result<Server, ServerBuildError> {
         let finished = Arc::new(AtomicUsize::new(0));
         let threads = self.threads.unwrap_or(1);
         let protocols = self.protocols
@@ -132,23 +144,25 @@ impl<'a> ServerBuilder<'a> {
         let throughput = self.throughput.unwrap_or(Arc::new(AtomicUsize::new(0)));
 
         let timer = Timer::default();
-        let socket_addr = self.addr.parse().expect("Parse listening addr failed");
+        let socket_addr = self.addr.parse()?;
 
-        let mut server = TcpServer::new(
+        let mut listener = TcpServer::new(
             MetaServerProtocol::new(protocols, timer.clone(), idle_secs, finished.clone()),
             socket_addr,
         );
-        server.threads(threads);
+        listener.threads(threads);
 
         info!("Server listening: {}", socket_addr);
-        Server {
+        let server = Server {
             services: Arc::new(self.services),
-            listener: server,
+            listener,
             throughput,
             finished,
             timer,
             remote: self.remote,
-        }
+        };
+
+        Ok(server)
     }
 }
 

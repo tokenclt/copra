@@ -121,7 +121,8 @@ fn main() {
     let server = ServerBuilder::new(addr, registry)
         .threads(1)
         .throughput(throughtput, core.remote())
-        .build();
+        .build()
+        .unwrap();
 
     thread::spawn(move || {
         server.start();

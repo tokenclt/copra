@@ -59,7 +59,7 @@ fn main() {
     registry.register_service("Echo", registrant);
 
     thread::spawn(move || {
-        let server = ServerBuilder::new(addr, registry).build();
+        let server = ServerBuilder::new(addr, registry).build().unwrap();
         server.start();
     });
 

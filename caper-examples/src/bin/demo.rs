@@ -97,7 +97,7 @@ fn main() {
     let registrant = DemoRegistrant::new(Demo::new(Arc::new(pool)));
     registry.register_service("Demo", registrant);
 
-    let server = ServerBuilder::new(addr, registry).build();
+    let server = ServerBuilder::new(addr, registry).build().unwrap();
     thread::spawn(move || {
         server.start();
     });
