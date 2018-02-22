@@ -1,3 +1,5 @@
+//! Codecs for marshalling and unmarshalling messages
+
 pub use protobuf::ProtobufError;
 
 use bytes::Bytes;
@@ -5,22 +7,30 @@ use bytes::buf::FromBuf;
 use protobuf::{parse_from_carllerche_bytes, Message, MessageStatic};
 use std::marker::PhantomData;
 
+/// Decode/encode messages from raw bytes
 pub trait MethodCodec {
+    /// Request message decoded from raw bytes
     type Request;
+    /// Response message for encoding to raw bytes
     type Response;
+    /// Error during decoding or encoding
     type Error;
 
+    /// Decode message from bytes
     fn decode(&self, buf: Bytes) -> Result<Self::Request, Self::Error>;
 
+    /// Encode message to bytes
     fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error>;
 }
 
+/// Codec for protobuf messages
 #[derive(Clone, Debug)]
 pub struct ProtobufCodec<T, U> {
     phantom: PhantomData<(T, U)>,
 }
 
 impl<T, U> ProtobufCodec<T, U> {
+    /// Create a new instance of the protobuf codec
     pub fn new() -> Self {
         ProtobufCodec {
             phantom: PhantomData,

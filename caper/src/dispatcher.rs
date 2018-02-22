@@ -1,28 +1,49 @@
+//! Find method by service name and method name
+
 use std::collections::HashMap;
+use std::fmt;
 
 use service::{EncapService, NewEncapService};
 
+/// Manage service registration and request dispatch
+///
+/// This struct is required to build a server. Service providers should add
+/// their services to this struct.
 pub struct ServiceRegistry {
     registry: HashMap<String, HashMap<String, NewEncapService>>,
 }
 
+impl fmt::Debug for ServiceRegistry {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_map()
+            .entries(
+                self.registry
+                    .iter()
+                    .map(|(k, v)| (k, v.keys().collect::<Vec<_>>())),
+            )
+            .finish()
+    }
+}
+
 impl ServiceRegistry {
+    /// Create a new empty registry
     pub fn new() -> Self {
         ServiceRegistry {
             registry: HashMap::new(),
         }
     }
 
-    pub fn register_service<T, S>(&mut self, service_name: S, registrant: T)
+    /// Add a new service to the registry
+    /// 
+    pub fn register_service<T>(&mut self, registrant: T)
     where
-        T: Registrant,
-        S: ToString,
+        T: NamedRegistrant,
     {
         let mut map = HashMap::new();
         for (method_name, encap) in registrant.methods().into_iter() {
             map.insert(method_name, encap);
         }
-        self.registry.insert(service_name.to_string(), map);
+        self.registry.insert(<T as NamedRegistrant>::name().to_string(), map);
     }
 
     pub fn get_method(&self, service_name: &str, method_name: &str) -> Option<EncapService> {
@@ -33,6 +54,13 @@ impl ServiceRegistry {
     }
 }
 
+
+
 pub trait Registrant {
     fn methods(&self) -> Vec<(String, NewEncapService)>;
+}
+
+
+pub trait NamedRegistrant: Registrant {
+    fn name() -> &'static str;
 }

@@ -170,8 +170,6 @@ extern crate httparse;
 #[macro_use]
 extern crate log;
 extern crate protobuf;
-#[cfg(test)]
-extern crate rand;
 extern crate smallvec;
 extern crate tokio_core;
 extern crate tokio_io;
@@ -179,6 +177,9 @@ extern crate tokio_proto;
 extern crate tokio_service;
 extern crate tokio_timer;
 extern crate url;
+
+#[cfg(test)]
+extern crate rand;
 
 pub use channel::ChannelBuilder;
 pub use controller::Controller;
