@@ -80,6 +80,7 @@ pub fn generate_registrant_service(
     proto: &ServiceDescriptorProto,
     root: &RootScope,
 ) -> io::Result<String> {
+    let service_name = service_name(proto)?;
     let trait_name = trait_name(proto)?;
     let method_names = method_names(proto)?;
     let future_names = future_names(proto)?;
@@ -89,6 +90,7 @@ pub fn generate_registrant_service(
 
     let mut gen = String::new();
 
+    // generate Registrant implementation
     gen = gen
         + &format!(
             r"
@@ -145,11 +147,30 @@ where
             );
     }
 
-    gen = gen + &format!(r"
+    gen = gen
+        + &format!(
+            r"
         entries
     }}
 }}
-    ");
+"
+        );
+
+    // generate NamedRegistrant implementation
+    gen = gen
+        + &format!(
+            r#"
+impl<S> ::caper::dispatcher::NamedRegistrant for {}<S> 
+where 
+    S: {} + Clone + Send + Sync + 'static,
+{{
+    fn name() -> &'static str {{
+        "{}"
+    }}
+}}
+"#,
+            reg_name, trait_name, service_name
+        );
 
     Ok(gen)
 }

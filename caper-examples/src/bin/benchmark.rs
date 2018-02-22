@@ -114,9 +114,9 @@ fn main() {
     let throughtput = Arc::new(AtomicUsize::new(0));
 
     let registrant = PressureRegistrant::new(Pressure);
-    registry.register_service("Pressure", registrant);
+    registry.register_service(registrant);
     let registrant = MetricRegistrant::new(Metric::new(throughtput.clone()));
-    registry.register_service("Metric", registrant);
+    registry.register_service(registrant);
 
     let server = ServerBuilder::new(addr, registry)
         .threads(1)

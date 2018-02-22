@@ -128,7 +128,7 @@
 //!         // register the service provider, so that it can be accessed
 //!         let registrant = EchoRegistrant::new(Echo);
 //!         let mut registry = ServiceRegistry::new();
-//!         registry.register_service("Echo", registrant);
+//!         registry.register_service(registrant);
 //!
 //!         let server = ServerBuilder::new(addr, registry).build().unwrap();
 //!         server.start();

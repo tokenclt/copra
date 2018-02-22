@@ -106,7 +106,16 @@ where
         entries
     }
 }
-    
+
+impl<S> ::caper::dispatcher::NamedRegistrant for DemoRegistrant<S> 
+where 
+    S: DemoService + Clone + Send + Sync + 'static,
+{
+    fn name() -> &'static str {
+        "Demo"
+    }
+}
+
 
 #[derive(Clone)]
 pub struct DemoStub<'a> {

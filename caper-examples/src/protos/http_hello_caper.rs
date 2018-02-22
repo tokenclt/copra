@@ -106,7 +106,16 @@ where
         entries
     }
 }
-    
+
+impl<S> ::caper::dispatcher::NamedRegistrant for HelloRegistrant<S> 
+where 
+    S: HelloService + Clone + Send + Sync + 'static,
+{
+    fn name() -> &'static str {
+        "Hello"
+    }
+}
+
 
 #[derive(Clone)]
 pub struct HelloStub<'a> {

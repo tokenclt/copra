@@ -56,7 +56,7 @@ fn main() {
     let handle = core.handle();
     let registrant = EchoRegistrant::new(Echo);
     let mut registry = ServiceRegistry::new();
-    registry.register_service("Echo", registrant);
+    registry.register_service(registrant);
 
     thread::spawn(move || {
         let server = ServerBuilder::new(addr, registry).build().unwrap();

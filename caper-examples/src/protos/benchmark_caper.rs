@@ -68,7 +68,16 @@ where
         entries
     }
 }
-    
+
+impl<S> ::caper::dispatcher::NamedRegistrant for MetricRegistrant<S> 
+where 
+    S: MetricService + Clone + Send + Sync + 'static,
+{
+    fn name() -> &'static str {
+        "Metric"
+    }
+}
+
 
 #[derive(Clone)]
 pub struct MetricStub<'a> {
@@ -203,7 +212,16 @@ where
         entries
     }
 }
-    
+
+impl<S> ::caper::dispatcher::NamedRegistrant for PressureRegistrant<S> 
+where 
+    S: PressureService + Clone + Send + Sync + 'static,
+{
+    fn name() -> &'static str {
+        "Pressure"
+    }
+}
+
 
 #[derive(Clone)]
 pub struct PressureStub<'a> {

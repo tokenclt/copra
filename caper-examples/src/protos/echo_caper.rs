@@ -106,7 +106,16 @@ where
         entries
     }
 }
-    
+
+impl<S> ::caper::dispatcher::NamedRegistrant for EchoRegistrant<S> 
+where 
+    S: EchoService + Clone + Send + Sync + 'static,
+{
+    fn name() -> &'static str {
+        "Echo"
+    }
+}
+
 
 #[derive(Clone)]
 pub struct EchoStub<'a> {
