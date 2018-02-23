@@ -16,10 +16,10 @@ pub trait MethodCodec {
     /// Error during decoding or encoding
     type Error;
 
-    /// Decode message from bytes
+    /// Decode message from bytes.
     fn decode(&self, buf: Bytes) -> Result<Self::Request, Self::Error>;
 
-    /// Encode message to bytes
+    /// Encode message to bytes.
     fn encode(&self, msg: Self::Response) -> Result<Bytes, Self::Error>;
 }
 
@@ -30,7 +30,7 @@ pub struct ProtobufCodec<T, U> {
 }
 
 impl<T, U> ProtobufCodec<T, U> {
-    /// Create a new instance of the protobuf codec
+    /// Create a new instance of the protobuf codec.
     pub fn new() -> Self {
         ProtobufCodec {
             phantom: PhantomData,

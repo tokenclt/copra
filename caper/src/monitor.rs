@@ -82,7 +82,7 @@ pub struct ThroughputMaintainer {
 }
 
 impl ThroughputMaintainer {
-    /// Create a new maintainer, export throughput value to `throughtput`
+    /// Create a new maintainer, export throughput value to `throughtput`.
     pub fn new(timer: Timer, finished: Arc<AtomicUsize>, throughput: Arc<AtomicUsize>) -> Self {
         let interval = timer.interval(Duration::from_secs(1));
         ThroughputMaintainer {

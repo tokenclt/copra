@@ -21,7 +21,7 @@ pub struct Controller {
 }
 
 impl Controller {
-    /// Set Content-Type field in http headers
+    /// Set Content-Type field in http headers.
     pub fn set_content_type(&mut self, s: &str) {
         self.headers
             .insert("Content-Type".to_string(), s.to_string());

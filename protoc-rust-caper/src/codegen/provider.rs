@@ -26,7 +26,6 @@ pub fn generate_service_trait(
         Item = ({}, ::caper::controller::Controller), 
         Error = ::caper::service::MethodError,
     > + 'static;
-
 ",
                 future, resp
             );
@@ -41,13 +40,12 @@ pub fn generate_service_trait(
             + &format!(
                 r"
     fn {}(&self, msg: ({}, ::caper::controller::Controller)) -> Self::{};
-
 ",
                 method, req, future
             );
     }
 
-    gen = gen + "}\n";
+    gen = gen + "}";
 
     Ok(gen)
 }
@@ -67,9 +65,7 @@ impl<S> {}<S> {{
     pub fn new(provider: S) -> Self {{
         {} {{ provider }}
     }}
-}}
-
-    ",
+}}",
             reg_name, reg_name, reg_name
         );
 
@@ -167,8 +163,7 @@ where
     fn name() -> &'static str {{
         "{}"
     }}
-}}
-"#,
+}}"#,
             reg_name, trait_name, service_name
         );
 

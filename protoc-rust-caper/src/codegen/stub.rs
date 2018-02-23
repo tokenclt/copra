@@ -42,13 +42,11 @@ pub struct {}<'a> {{",
 
     gen = gen
         + &format!(
-            r"
-}}
+            r"}}
 
 impl<'a> {}<'a> {{
     pub fn new(channel: &'a ::caper::channel::Channel) -> Self {{
-        {} {{
-    ",
+        {} {{",
             stub_name, stub_name
         );
 
@@ -65,9 +63,9 @@ impl<'a> {}<'a> {{
     }
 
     gen = gen
-        + r"
-        }
-    }";
+        + r"        }
+    }
+";
 
     for (((method, req), resp), wrap) in method_names
         .iter()

@@ -1,6 +1,7 @@
 // This file is generated, Do not edit
 // @generated
 
+#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(missing_docs)]
 #![allow(dead_code)]
 
@@ -10,11 +11,8 @@ pub trait MetricService {
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     fn metric(&self, msg: (super::benchmark::Empty, ::caper::controller::Controller)) -> Self::MetricFuture;
-
 }
-
 
 pub struct MetricRegistrant<S> {
     provider: S,
@@ -25,8 +23,6 @@ impl<S> MetricRegistrant<S> {
         MetricRegistrant { provider }
     }
 }
-
-    
 
 impl<S> ::caper::dispatcher::Registrant for MetricRegistrant<S>
 where
@@ -78,24 +74,21 @@ where
     }
 }
 
-
 #[derive(Clone)]
 pub struct MetricStub<'a> {
     metric_wrapper: ::caper::stub::RpcWrapper<'a,
         ::caper::codec::ProtobufCodec<super::benchmark::Empty, super::benchmark::Empty>>,
-
 }
 
 impl<'a> MetricStub<'a> {
     pub fn new(channel: &'a ::caper::channel::Channel) -> Self {
         MetricStub {
-    
             metric_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
-
         }
     }
+
     pub fn metric(
         &'a self, 
         msg: super::benchmark::Empty,
@@ -116,20 +109,15 @@ pub trait PressureService {
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     type ProcessFuture: ::futures::Future<
         Item = (super::benchmark::Empty, ::caper::controller::Controller), 
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     fn echo(&self, msg: (super::benchmark::StringMessage, ::caper::controller::Controller)) -> Self::EchoFuture;
 
-
     fn process(&self, msg: (super::benchmark::PressureRequest, ::caper::controller::Controller)) -> Self::ProcessFuture;
-
 }
-
 
 pub struct PressureRegistrant<S> {
     provider: S,
@@ -140,8 +128,6 @@ impl<S> PressureRegistrant<S> {
         PressureRegistrant { provider }
     }
 }
-
-    
 
 impl<S> ::caper::dispatcher::Registrant for PressureRegistrant<S>
 where
@@ -222,7 +208,6 @@ where
     }
 }
 
-
 #[derive(Clone)]
 pub struct PressureStub<'a> {
     echo_wrapper: ::caper::stub::RpcWrapper<'a,
@@ -230,13 +215,11 @@ pub struct PressureStub<'a> {
 
     process_wrapper: ::caper::stub::RpcWrapper<'a,
         ::caper::codec::ProtobufCodec<super::benchmark::Empty, super::benchmark::PressureRequest>>,
-
 }
 
 impl<'a> PressureStub<'a> {
     pub fn new(channel: &'a ::caper::channel::Channel) -> Self {
         PressureStub {
-    
             echo_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
@@ -244,9 +227,9 @@ impl<'a> PressureStub<'a> {
             process_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
-
         }
     }
+
     pub fn echo(
         &'a self, 
         msg: super::benchmark::StringMessage,

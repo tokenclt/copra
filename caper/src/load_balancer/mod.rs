@@ -46,7 +46,7 @@ pub struct CallInfo {
 }
 
 impl CallInfo {
-    /// Create a new instance
+    /// Create a new instance.
     pub fn new(start_usec: u64, error: Option<MethodError>) -> Self {
         CallInfo { start_usec, error }
     }
@@ -55,9 +55,9 @@ impl CallInfo {
 
 /// Something can serve as a load balancer
 pub trait LoadBalance {
-    /// Select a server to send request
+    /// Select a server to send request.
     fn select_server(&mut self) -> (ServerId, &ServerEndPort);
 
-    /// Update load balancing state
+    /// Update load balancing state.
     fn feed_back(&mut self, id: ServerId, call_info: CallInfo);
 }

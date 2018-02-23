@@ -23,7 +23,7 @@ pub enum HttpStatus {
 }
 
 impl HttpStatus {
-    /// Number representation
+    /// Number representation.
     pub fn to_code(&self) -> i32 {
         match *self {
             HttpStatus::Ok => 200,
@@ -31,7 +31,7 @@ impl HttpStatus {
         }
     }
 
-    /// Short string description
+    /// Short string description.
     pub fn to_status_line(&self) -> &'static str {
         match *self {
             HttpStatus::Ok => "200 OK",
@@ -55,7 +55,7 @@ pub struct HttpProtocol {
 }
 
 impl HttpProtocol {
-    /// Create a new instance
+    /// Create a new instance.
     pub fn new() -> Self {
         HttpProtocol {
             state: HttpParseState::ReadingHeader,

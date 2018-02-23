@@ -28,7 +28,7 @@ pub struct BrpcProtocol {
 }
 
 impl BrpcProtocol {
-    /// Create a new instance
+    /// Create a new instance.
     pub fn new() -> Self {
         BrpcProtocol {
             state: BrpcParseState::ReadingHeader,

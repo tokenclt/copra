@@ -2,6 +2,24 @@
 //!
 //! This module contains the `Channel` struct and some types interact with it.
 //!
+//! # Examples
+//!
+//! ```rust
+//! # extern crate caper;
+//! # extern crate tokio_core;
+//! # use std::error::Error;
+//! use caper::ChannelBuilder;
+//! use tokio_core::reactor::Core;
+//!
+//! # fn main() {
+//! #     try_main().unwrap();
+//! # }
+//! # fn try_main() -> Result<(), Box<Error>> {
+//! let core = Core::new()?;
+//! let builder = ChannelBuilder::single_server("127.0.0.1:8000", core.handle());
+//! let channel = core.run(builder.build())?;
+//! # }
+//! ```
 
 use bytes::Bytes;
 use tokio_core::net::TcpStream;
@@ -148,7 +166,7 @@ impl fmt::Debug for MetaClientProtocol {
 }
 
 impl MetaClientProtocol {
-    /// Create a new instance
+    /// Create a new instance.
     pub fn new(proto_type: &Protocol, handle: Handle, addr: SocketAddr) -> Self {
         let proto = match proto_type {
             // TODO: unify construction interface of protocols
@@ -186,25 +204,6 @@ enum ConnectMode<'a> {
 ///
 /// This builder ease the configuration of the channel. You can chain up the configuration methods,
 /// and call `build` to consume it, which will return a future that resolves to a `Channel`.
-///
-/// # Examples
-///
-/// ```rust
-/// # extern crate caper;
-/// # extern crate tokio_core;
-/// # use std::error::Error;
-/// use caper::ChannelBuilder;
-/// use tokio_core::reactor::Core;
-///
-/// # fn main() {
-/// #     try_main().unwrap();
-/// # }
-/// # fn try_main() -> Result<(), Box<Error>> {
-/// let core = Core::new()?;
-/// let builder = ChannelBuilder::single_server("127.0.0.1:8000", core.handle());
-/// let channel = core.run(builder.build())?;
-/// # }
-/// ```
 #[derive(Debug)]
 pub struct ChannelBuilder<'a> {
     mode: ConnectMode<'a>,
@@ -216,7 +215,7 @@ pub struct ChannelBuilder<'a> {
 }
 
 impl<'a> ChannelBuilder<'a> {
-    /// Connect to a server by IP address
+    /// Connect to a server by IP address.
     ///
     /// This method will create a new channel builder.
     pub fn single_server(addr: &'a str, handle: Handle) -> Self {
@@ -230,7 +229,7 @@ impl<'a> ChannelBuilder<'a> {
         }
     }
 
-    /// [WIP] Choose a communication protocol
+    /// [WIP] Choose a communication protocol.
     ///
     /// This RPC framework is intended to support multiple communication protocols
     /// (e.g. grpc and plain http). Currently, it is recommended to leave this to
@@ -246,7 +245,7 @@ impl<'a> ChannelBuilder<'a> {
         self
     }
 
-    /// [WIP] Set request deadline
+    /// [WIP] Set request deadline.
     ///
     /// A request will be set to failed if it reaches its deadline.
     ///
@@ -257,7 +256,7 @@ impl<'a> ChannelBuilder<'a> {
         self
     }
 
-    /// Set concurrency limit
+    /// Set concurrency limit.
     ///
     /// The number of unresolved requests will be confined below `max_concurrency`.
     /// When this limit is reached, new request will fail immidiately. Thus, it can
@@ -269,7 +268,7 @@ impl<'a> ChannelBuilder<'a> {
         self
     }
 
-    /// Consume the builder and begin to prepare connection
+    /// Consume the builder and begin to prepare connection.
     ///
     /// This method returns a future that will resolve to a `Channel`.
     ///
@@ -359,7 +358,7 @@ pub struct Channel {
 }
 
 impl Channel {
-    /// Create a new channel
+    /// Create a new channel.
     ///
     /// This method is used by `ChannelBuilder`.
     pub fn new(sender: ChannelSender, max_concurrency: u32) -> Self {
@@ -370,7 +369,7 @@ impl Channel {
         }
     }
 
-    /// Issue a request
+    /// Issue a request.
     ///
     /// This method deals with serialized, untyped message. It is meaned to be used
     /// internally by the framework. More ergonomic interfaces are provided by the 
@@ -407,17 +406,17 @@ pub struct FeedbackHandle {
 }
 
 impl FeedbackHandle {
-    /// Create a new handle
+    /// Create a new handle.
     pub fn new(id: ServerId, sender: FeedbackSender) -> Self {
         FeedbackHandle { id, sender }
     }
 
-    /// Get server ID 
+    /// Get server ID.
     pub fn server_id(&self) -> ServerId {
         self.id
     }
 
-    /// Send feedback massage
+    /// Send feedback massage.
     pub fn call(self, info: CallInfo) {
         self.sender
             .send((self.id, info))

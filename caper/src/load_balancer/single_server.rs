@@ -9,7 +9,7 @@ pub struct SingleServerLoadBalancer {
 }
 
 impl SingleServerLoadBalancer {
-    /// Create a new instance
+    /// Create a new instance.
     pub fn new(service: ServerEndPort) -> Self {
         SingleServerLoadBalancer {
             service: service,

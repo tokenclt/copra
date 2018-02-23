@@ -57,6 +57,7 @@ fn generate_file_header() -> String {
 // This file is generated, Do not edit
 // @generated
 
+#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(missing_docs)]
 #![allow(dead_code)]
 ";

@@ -1,6 +1,7 @@
 // This file is generated, Do not edit
 // @generated
 
+#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(missing_docs)]
 #![allow(dead_code)]
 
@@ -10,20 +11,15 @@ pub trait HelloService {
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     type HelloToFuture: ::futures::Future<
         Item = (super::http_hello::HelloResponse, ::caper::controller::Controller), 
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     fn hello_general(&self, msg: (super::http_hello::HelloRequest, ::caper::controller::Controller)) -> Self::HelloGeneralFuture;
 
-
     fn hello_to(&self, msg: (super::http_hello::HelloRequest, ::caper::controller::Controller)) -> Self::HelloToFuture;
-
 }
-
 
 pub struct HelloRegistrant<S> {
     provider: S,
@@ -34,8 +30,6 @@ impl<S> HelloRegistrant<S> {
         HelloRegistrant { provider }
     }
 }
-
-    
 
 impl<S> ::caper::dispatcher::Registrant for HelloRegistrant<S>
 where
@@ -116,7 +110,6 @@ where
     }
 }
 
-
 #[derive(Clone)]
 pub struct HelloStub<'a> {
     hello_general_wrapper: ::caper::stub::RpcWrapper<'a,
@@ -124,13 +117,11 @@ pub struct HelloStub<'a> {
 
     hello_to_wrapper: ::caper::stub::RpcWrapper<'a,
         ::caper::codec::ProtobufCodec<super::http_hello::HelloResponse, super::http_hello::HelloRequest>>,
-
 }
 
 impl<'a> HelloStub<'a> {
     pub fn new(channel: &'a ::caper::channel::Channel) -> Self {
         HelloStub {
-    
             hello_general_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
@@ -138,9 +129,9 @@ impl<'a> HelloStub<'a> {
             hello_to_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
-
         }
     }
+
     pub fn hello_general(
         &'a self, 
         msg: super::http_hello::HelloRequest,

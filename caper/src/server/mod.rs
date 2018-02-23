@@ -1,4 +1,25 @@
 //! Accept connections and provide services
+//!
+//! # Examples
+//!
+//! ```rust
+//! # extern crate caper;
+//! # extern crate tokio_core;
+//! # use std::error::Error;
+//! use caper::{ServiceRegistry, ServerBuilder};
+//! # fn main() {
+//! #     try_main().unwrap();
+//! # }
+//! # fn try_main() -> Result<(), Box<Error>> {
+//!
+//! let mut registry = ServiceRegistry::new();
+//!
+//! // add some service to the registry
+//!
+//! let server = ServerBuilder::new("127.0.0.1:8000", registry).build()?;
+//! server.start();
+//! # }
+//! ```
 
 use bytes::Bytes;
 use tokio_core::reactor::Remote;
@@ -122,29 +143,6 @@ impl From<AddrParseError> for ServerBuildError {
 /// Server factory, which can be used to setup up a new server
 ///
 /// You can chain up the methods to configure the channel.
-///
-/// # Examples
-///
-/// ```rust
-/// # extern crate caper;
-/// # extern crate tokio_core;
-/// # use std::error::Error;
-/// use caper::{ServiceRegistry, ServerBuilder};
-///
-/// # fn main() {
-/// #     try_main().unwrap();
-/// # }
-///
-/// # fn try_main() -> Result<(), Box<Error>> {
-/// let mut registry = ServiceRegistry::new();
-///
-/// // add some service to the registry
-///
-/// let server = ServerBuilder::new("127.0.0.1:8000", registry).build()?;
-/// server.start();
-/// # }
-///
-/// ```
 #[derive(Debug)]
 pub struct ServerBuilder<'a> {
     services: ServiceRegistry,
@@ -157,7 +155,7 @@ pub struct ServerBuilder<'a> {
 }
 
 impl<'a> ServerBuilder<'a> {
-    /// Create a server listening to `addr`
+    /// Create a server listening to `addr`.
     pub fn new(addr: &'a str, services: ServiceRegistry) -> Self {
         ServerBuilder {
             services,
@@ -170,7 +168,7 @@ impl<'a> ServerBuilder<'a> {
         }
     }
 
-    /// Set the number of event loops
+    /// Set the number of event loops.
     ///
     /// The thread number should not exceed the CPU core number.
     /// Default to 1.
@@ -179,15 +177,15 @@ impl<'a> ServerBuilder<'a> {
         self
     }
 
-    /// [WIP] Set the protocols that the server willing to support
+    /// [WIP] Set the protocols that the server willing to support.
     pub fn protocols(mut self, protocols: Vec<Protocol>) -> Self {
         self.protocols = Some(protocols);
         self
     }
 
     // TODO: default to no-op
-    /// Keep an idle connection for `idle` seconds before it is
-    /// shuted down by the server
+    /// Keep an idle connection for `idle` seconds before it iS shuted down
+    /// by the server.
     ///
     /// Default to 60 seconds
     pub fn idle_secs(mut self, idle: Second) -> Self {
@@ -196,14 +194,14 @@ impl<'a> ServerBuilder<'a> {
     }
 
     /// [WIP] Server monitor, expose throught to the shared variable
-    /// `throughput`
+    /// `throughput`.
     pub fn throughput(mut self, throughput: Arc<AtomicUsize>, remote: Remote) -> Self {
         self.throughput = Some(throughput);
         self.remote = Some(remote);
         self
     }
 
-    /// Consume the builder and build
+    /// Consume the builder and build.
     pub fn build(self) -> Result<Server, ServerBuildError> {
         let finished = Arc::new(AtomicUsize::new(0));
         let threads = self.threads.unwrap_or(1);
@@ -247,7 +245,7 @@ pub struct Server {
 }
 
 impl Server {
-    /// Run the server
+    /// Run the server.
     ///
     /// This method will block the current thread forever
     pub fn start(&self) {

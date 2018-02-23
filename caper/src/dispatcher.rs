@@ -26,15 +26,14 @@ impl fmt::Debug for ServiceRegistry {
 }
 
 impl ServiceRegistry {
-    /// Create a new empty registry
+    /// Create a new empty registry.
     pub fn new() -> Self {
         ServiceRegistry {
             registry: HashMap::new(),
         }
     }
 
-    /// Add a new service to the registry
-    /// 
+    /// Add a new service to the registry.
     pub fn register_service<T>(&mut self, registrant: T)
     where
         T: NamedRegistrant,
@@ -46,7 +45,7 @@ impl ServiceRegistry {
         self.registry.insert(<T as NamedRegistrant>::name().to_string(), map);
     }
 
-    /// Get a method by service name and method name
+    /// Get a method by service name and method name.
     /// 
     /// This method is used internally by generated stubs.
     pub fn get_method(&self, service_name: &str, method_name: &str) -> Option<EncapService> {
@@ -63,7 +62,7 @@ impl ServiceRegistry {
 /// This trait is automatically implemented by code generator. You do not
 /// need to touch it.
 pub trait Registrant {
-    /// Get a list of name-method pairs
+    /// Get a list of name-method pairs.
     fn methods(&self) -> Vec<(String, NewEncapService)>;
 }
 
@@ -72,6 +71,6 @@ pub trait Registrant {
 /// This trait is automatically implemented by code generator. You do not
 /// need to touch it.
 pub trait NamedRegistrant: Registrant {
-    /// Get service name
+    /// Get service name.
     fn name() -> &'static str;
 }

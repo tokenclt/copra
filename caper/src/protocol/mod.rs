@@ -42,23 +42,23 @@ pub enum ProtocolError {
 
 /// A protocl that can decode and encode RPC messages
 pub trait RpcProtocol: Sync + Send {
-    /// Test if the byte stream matches this protocol
+    /// Test if the byte stream matches this protocol.
     fn try_parse(
         &mut self,
         buf: &mut BytesMut,
     ) -> Result<(RequestId, (RpcMeta, Controller, Bytes)), ProtocolError>;
 
-    /// Clone and wrap into a box
+    /// Clone and wrap into a box.
     fn new_boxed(&self) -> Box<RpcProtocol>;
 
-    /// encode message to bytes and add them to the buffer
+    /// encode message to bytes and add them to the buffer.
     fn write_package(
         &self,
         meta: (RpcMeta, Controller, Bytes),
         buf: &mut BytesMut,
     ) -> io::Result<()>;
 
-    /// Protocol name
+    /// Protocol name.
     fn name(&self) -> &'static str;
 }
 
@@ -98,7 +98,7 @@ pub struct ProtoCodec {
 // }
 
 impl ProtoCodec {
-    /// Create a new codec that support multiple protocols
+    /// Create a new codec that support multiple protocols.
     pub fn new(protos: &[Box<RpcProtocol>]) -> Self {
         let schemes: SmallVec<[Box<RpcProtocol>; 4]> =
             protos.iter().map(|proto| proto.new_boxed()).collect();
@@ -178,7 +178,7 @@ impl fmt::Debug for ProtoCodecClient {
 }
 
 impl ProtoCodecClient {
-    /// Create a new client codec
+    /// Create a new client codec.
     pub fn new(proto: Box<RpcProtocol>) -> Self {
         ProtoCodecClient { scheme: proto }
     }

@@ -1,6 +1,7 @@
 // This file is generated, Do not edit
 // @generated
 
+#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(missing_docs)]
 #![allow(dead_code)]
 
@@ -10,20 +11,15 @@ pub trait DemoService {
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     type IsPrimeFuture: ::futures::Future<
         Item = (super::demo::PrimeResponse, ::caper::controller::Controller), 
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     fn greet_to(&self, msg: (super::demo::GreetMessage, ::caper::controller::Controller)) -> Self::GreetToFuture;
 
-
     fn is_prime(&self, msg: (super::demo::PrimeRequest, ::caper::controller::Controller)) -> Self::IsPrimeFuture;
-
 }
-
 
 pub struct DemoRegistrant<S> {
     provider: S,
@@ -34,8 +30,6 @@ impl<S> DemoRegistrant<S> {
         DemoRegistrant { provider }
     }
 }
-
-    
 
 impl<S> ::caper::dispatcher::Registrant for DemoRegistrant<S>
 where
@@ -116,7 +110,6 @@ where
     }
 }
 
-
 #[derive(Clone)]
 pub struct DemoStub<'a> {
     greet_to_wrapper: ::caper::stub::RpcWrapper<'a,
@@ -124,13 +117,11 @@ pub struct DemoStub<'a> {
 
     is_prime_wrapper: ::caper::stub::RpcWrapper<'a,
         ::caper::codec::ProtobufCodec<super::demo::PrimeResponse, super::demo::PrimeRequest>>,
-
 }
 
 impl<'a> DemoStub<'a> {
     pub fn new(channel: &'a ::caper::channel::Channel) -> Self {
         DemoStub {
-    
             greet_to_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
@@ -138,9 +129,9 @@ impl<'a> DemoStub<'a> {
             is_prime_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
-
         }
     }
+
     pub fn greet_to(
         &'a self, 
         msg: super::demo::GreetMessage,

@@ -22,7 +22,7 @@ pub struct RpcWrapper<'a, C: Clone> {
 }
 
 impl<'a, C: Clone> RpcWrapper<'a, C> {
-    /// Create a binding from a codec and a reference to channel
+    /// Create a binding from a codec and a reference to channel.
     pub fn new(codec: C, channel: &'a Channel) -> Self {
         RpcWrapper { codec, channel }
     }
@@ -32,7 +32,7 @@ impl<'a, C> RpcWrapper<'a, C>
 where
     C: MethodCodec + Clone,
 {
-    /// Issue a request and obtain a future
+    /// Issue a request and obtain a future.
     pub fn call(&'a self, bundle: (C::Response, String, String)) -> StubFuture<C> {
         let (req, service_name, method_name) = bundle;
         let channel_fut = match self.codec.encode(req) {
@@ -69,7 +69,7 @@ pub struct StubFuture<C> {
 }
 
 impl<C> StubFuture<C> {
-    /// Create a new future
+    /// Create a new future.
     pub fn new(inner: Option<ChannelFuture>, codec: C) -> Self {
         StubFuture {
             start_usec: 0,

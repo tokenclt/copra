@@ -68,7 +68,7 @@
 //!         out_dir: "src/protos",
 //!         input: &["echo.proto"],
 //!         includes: &[],
-//!         rust_protobuf: truem
+//!         rust_protobuf: true
 //!     }).expect("Failed to compile proto files");
 //! }
 //! ```

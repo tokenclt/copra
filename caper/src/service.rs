@@ -64,7 +64,7 @@ where
     S: Service<Request = Bundle, Response = Bundle, Error = MethodError, Future = MethodFuture>,
     S: 'static + Send + Sync,
 {
-    /// Create a new instance by boxing
+    /// Create a new instance by boxing.
     pub fn new(method: S) -> Self {
         NewEncapsulatedMethod {
             inner: Box::new(method),

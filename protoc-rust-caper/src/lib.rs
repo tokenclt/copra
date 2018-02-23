@@ -1,10 +1,47 @@
+//! Code generator for caper RPC framework
+//!
+//! This crate provides one function [`run`], which can generate service provider
+//! templates and client side stubs from `.proto` files. The best place to use
+//! this function is the `build.rs` file. For more information about `build.rs`,
+//! please refer to the [build scripts] section of the official cargo book.
+//!
+//! [`run`]: fn.run.html
+//! [build scripts]: https://doc.rust-lang.org/cargo/reference/build-scripts.html
+//!
+//! # Examples
+//!
+//! Say, we have a `awesome.proto` file in the project root directory (i.e. next
+//! to `Cargo.toml`), and we want to generate rust code in `src/generated`.
+//! We can add this to `build.rs`:
+//!
+//! ```no_run
+//! extern crate protoc_rust_caper;
+//!
+//! fn main() {
+//!     protoc_rust_caper::run(protoc_rust_caper::Args {
+//!         out_dir: "src/generated",
+//!         input: &["awesome.proto"],
+//!         includes: &[],
+//!         rust_protobuf: true
+//!     }).expect("Failed to compile proto files");
+//! }
+//! ```
+//!
+//! # Acknowledgment
+//!
+//! The crate is a mirror of [protoc-rust-grpc].
+//!
+//! [protoc-rust-grpc]: https://crates.io/crates/protoc-rust-grpc
+
+#![warn(missing_docs, missing_debug_implementations)]
+
 extern crate inflector;
+#[macro_use]
+extern crate log;
 extern crate protobuf;
 extern crate protoc;
 extern crate protoc_rust;
 extern crate tempdir;
-#[macro_use]
-extern crate log;
 
 mod codegen;
 
@@ -13,22 +50,24 @@ use std::io::Read;
 use std::io::Write;
 use std::fs;
 
-pub type Error = io::Error;
-pub type Result<T> = io::Result<T>;
-
 #[derive(Debug, Default)]
+/// Argument passed to `run`
 pub struct Args<'a> {
-    /// --lang_out= param
+    /// where to put generated files
     pub out_dir: &'a str,
-    /// -I args
+    /// dependency to other .proto files
     pub includes: &'a [&'a str],
     /// List of .proto files to compile
     pub input: &'a [&'a str],
-    /// Generate rust-protobuf files along with rust-gprc
+    /// Generate rust-protobuf files along with caper
+    ///
+    /// Set this value to `false` to only generate service boilerplates and RPC
+    /// stubs.
     pub rust_protobuf: bool,
 }
 
-pub fn run(args: Args) -> Result<()> {
+/// Generate rust code
+pub fn run(args: Args) -> io::Result<()> {
     let protoc = protoc::Protoc::from_env_path();
     let version = protoc.version().expect("protoc version");
     if !version.is_3() {
@@ -79,7 +118,7 @@ pub fn run(args: Args) -> Result<()> {
             }
         }
 
-        return Err(Error::new(
+        return Err(io::Error::new(
             io::ErrorKind::Other,
             format!(
                 "file {:?} is not found in includes {:?}",

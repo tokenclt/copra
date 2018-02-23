@@ -1,6 +1,7 @@
 // This file is generated, Do not edit
 // @generated
 
+#![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(missing_docs)]
 #![allow(dead_code)]
 
@@ -10,20 +11,15 @@ pub trait EchoService {
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     type RevEchoFuture: ::futures::Future<
         Item = (super::echo::EchoResponse, ::caper::controller::Controller), 
         Error = ::caper::service::MethodError,
     > + 'static;
 
-
     fn echo(&self, msg: (super::echo::EchoRequest, ::caper::controller::Controller)) -> Self::EchoFuture;
 
-
     fn rev_echo(&self, msg: (super::echo::EchoRequest, ::caper::controller::Controller)) -> Self::RevEchoFuture;
-
 }
-
 
 pub struct EchoRegistrant<S> {
     provider: S,
@@ -34,8 +30,6 @@ impl<S> EchoRegistrant<S> {
         EchoRegistrant { provider }
     }
 }
-
-    
 
 impl<S> ::caper::dispatcher::Registrant for EchoRegistrant<S>
 where
@@ -116,7 +110,6 @@ where
     }
 }
 
-
 #[derive(Clone)]
 pub struct EchoStub<'a> {
     echo_wrapper: ::caper::stub::RpcWrapper<'a,
@@ -124,13 +117,11 @@ pub struct EchoStub<'a> {
 
     rev_echo_wrapper: ::caper::stub::RpcWrapper<'a,
         ::caper::codec::ProtobufCodec<super::echo::EchoResponse, super::echo::EchoRequest>>,
-
 }
 
 impl<'a> EchoStub<'a> {
     pub fn new(channel: &'a ::caper::channel::Channel) -> Self {
         EchoStub {
-    
             echo_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
@@ -138,9 +129,9 @@ impl<'a> EchoStub<'a> {
             rev_echo_wrapper: ::caper::stub::RpcWrapper::new(
                 ::caper::codec::ProtobufCodec::new(), channel
             ),
-
         }
     }
+
     pub fn echo(
         &'a self, 
         msg: super::echo::EchoRequest,
