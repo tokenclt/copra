@@ -1,0 +1,27 @@
+[package]
+name = "copra"
+version = "0.1.0"
+description = "A RPC framework (still in early development stage)"
+authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
+keywords = ["RPC"]
+license = "MIT/Apache-2.0"
+
+[dependencies]
+bytes = "0.4"
+futures = "0.1"
+httparse = "1.2"
+log = "0.3"
+tokio-io = "0.1"
+tokio-core = "0.1"
+tokio-timer-plus = "0.1"
+tokio-proto = "0.1"
+tokio-service = "0.1"
+protobuf = {version = "1.4", features = ["with-bytes"]}
+smallvec = "0.5"
+url = "1.6"
+
+[build-dependencies]
+protoc-rust = "1.4"
+
+[dev-dependencies]
+rand = "0.4"

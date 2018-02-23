@@ -1,0 +1,15 @@
+[package]
+name = "protoc-rust-copra"
+version = "0.1.0"
+authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
+description = "Code generator works with the copra RPC framework"
+keywords = ["RPC"]
+license = "MIT/Apache-2.0"
+
+[dependencies]
+Inflector = "0.11"
+protoc = "1.4"
+protoc-rust = "1.4"
+protobuf = {version = "1.4", features = ["with-bytes"]}
+log = "0.3"
+tempdir = "0.3"

@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "caper",
-    "protoc-rust-caper",
-    "caper-examples",
+    "copra",
+    "protoc-rust-copra",
+    "copra-examples",
 ]
