@@ -1,10 +1,15 @@
+//! Load balancing for a single server
+
 use super::{CallInfo, LoadBalance, ServerId, ServerEndPort};
 
+/// Provide load balancing for a single server
+#[derive(Debug)]
 pub struct SingleServerLoadBalancer {
     service: ServerEndPort,
 }
 
 impl SingleServerLoadBalancer {
+    /// Create a new instance
     pub fn new(service: ServerEndPort) -> Self {
         SingleServerLoadBalancer {
             service: service,

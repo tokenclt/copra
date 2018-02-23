@@ -46,6 +46,9 @@ impl ServiceRegistry {
         self.registry.insert(<T as NamedRegistrant>::name().to_string(), map);
     }
 
+    /// Get a method by service name and method name
+    /// 
+    /// This method is used internally by generated stubs.
     pub fn get_method(&self, service_name: &str, method_name: &str) -> Option<EncapService> {
         self.registry
             .get(service_name)
@@ -55,12 +58,20 @@ impl ServiceRegistry {
 }
 
 
-
+/// Link method names with methods
+/// 
+/// This trait is automatically implemented by code generator. You do not
+/// need to touch it.
 pub trait Registrant {
+    /// Get a list of name-method pairs
     fn methods(&self) -> Vec<(String, NewEncapService)>;
 }
 
-
+/// Link service name to a registrant
+/// 
+/// This trait is automatically implemented by code generator. You do not
+/// need to touch it.
 pub trait NamedRegistrant: Registrant {
+    /// Get service name
     fn name() -> &'static str;
 }
