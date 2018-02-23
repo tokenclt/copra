@@ -1,3 +1,5 @@
+//! [WIP] Http 1.X protocol
+
 use bytes::{BufMut, Bytes, BytesMut};
 use std::io;
 use std::str;
@@ -12,12 +14,16 @@ use super::{ProtocolError, RpcProtocol};
 use message::{RpcMeta, RpcRequestMeta};
 
 #[derive(Clone, PartialEq, Debug)]
+/// Status code in http response
 pub enum HttpStatus {
+    /// 200 Ok
     Ok,
+    /// 403 Forbidden
     Forbidden,
 }
 
 impl HttpStatus {
+    /// Number representation
     pub fn to_code(&self) -> i32 {
         match *self {
             HttpStatus::Ok => 200,
@@ -25,6 +31,7 @@ impl HttpStatus {
         }
     }
 
+    /// Short string description
     pub fn to_status_line(&self) -> &'static str {
         match *self {
             HttpStatus::Ok => "200 OK",
@@ -33,19 +40,22 @@ impl HttpStatus {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum HttpParseState {
     ReadingHeader,
     /// (header length, content length, controller)
     ReadingContent(usize, usize, RpcMeta, Controller),
 }
 
-#[derive(Clone)]
+
+/// Http protocol
+#[derive(Clone, Debug)]
 pub struct HttpProtocol {
     state: HttpParseState,
 }
 
 impl HttpProtocol {
+    /// Create a new instance
     pub fn new() -> Self {
         HttpProtocol {
             state: HttpParseState::ReadingHeader,
@@ -224,5 +234,9 @@ impl RpcProtocol for HttpProtocol {
             }
         }
         Ok(())
+    }
+
+    fn name(&self) -> &'static str {
+        "http"
     }
 }

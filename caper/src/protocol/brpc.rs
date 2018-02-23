@@ -1,3 +1,7 @@
+//! Brpc protocol, inspired by [brpc] framework developed by Baidu Inc.
+//! 
+//! [brpc]: https://github.com/brpc/brpc
+
 use bytes::{BigEndian, Buf, BufMut, Bytes, BytesMut, IntoBuf};
 use std::io;
 use tokio_proto::multiplex::RequestId;
@@ -9,19 +13,22 @@ use message::RpcMeta;
 
 static HEADER: &[u8] = b"PRPC";
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum BrpcParseState {
     ReadingHeader,
     ReadingLength,
     ReadingContent(u32, u32),
 }
 
-#[derive(Clone)]
+
+/// Brpc protocol
+#[derive(Clone, Debug)]
 pub struct BrpcProtocol {
     state: BrpcParseState,
 }
 
 impl BrpcProtocol {
+    /// Create a new instance
     pub fn new() -> Self {
         BrpcProtocol {
             state: BrpcParseState::ReadingHeader,
@@ -103,6 +110,10 @@ impl RpcProtocol for BrpcProtocol {
         buf.put(body);
 
         Ok(())
+    }
+
+    fn name(&self) -> &'static str {
+        "brpc"
     }
 }
 

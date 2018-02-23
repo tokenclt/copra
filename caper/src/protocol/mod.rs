@@ -1,5 +1,8 @@
+//! Message protocols
+
 use bytes::{Bytes, BytesMut};
 use smallvec::SmallVec;
+use std::fmt;
 use std::io;
 use tokio_io::codec::{Decoder, Encoder};
 use tokio_proto::multiplex::RequestId;
@@ -14,41 +17,81 @@ pub use self::http::HttpProtocol;
 pub mod brpc;
 pub mod http;
 
+// TODO: depracate
+/// Protocol selection enum
 #[derive(Clone, Debug)]
 pub enum Protocol {
+    /// brpc protocol
     Brpc,
+    /// plain http 1.X protocol
     Http,
 }
 
+/// Protocol resolution error at server side
 #[derive(Clone, Debug, PartialEq)]
 pub enum ProtocolError {
+    /// The byte stream does not match the format of this protocol,
+    /// try next protocol
     TryOthers,
+    /// Can not decide if the byte stream matches this protocol, need more data
     NeedMoreBytes,
+    /// The byte stream has partially matched this protocol, but now there is
+    /// a decoding error
     AbsolutelyWrong,
 }
 
+/// A protocl that can decode and encode RPC messages
 pub trait RpcProtocol: Sync + Send {
+    /// Test if the byte stream matches this protocol
     fn try_parse(
         &mut self,
         buf: &mut BytesMut,
     ) -> Result<(RequestId, (RpcMeta, Controller, Bytes)), ProtocolError>;
 
+    /// Clone and wrap into a box
     fn new_boxed(&self) -> Box<RpcProtocol>;
 
+    /// encode message to bytes and add them to the buffer
     fn write_package(
         &self,
         meta: (RpcMeta, Controller, Bytes),
         buf: &mut BytesMut,
     ) -> io::Result<()>;
+
+    /// Protocol name
+    fn name(&self) -> &'static str;
 }
 
+/// Server side codec that can deduce protocol from byte stream
+///
+/// Server can provide services to clients that use different protocols.
+/// When a new connection is established, the server try each protocol until
+/// it succeeds in decoding the request. Since `caper` use keep-alive connections
+/// to exchange messages, this match is cached so that the protocol resolution
+/// overhead is only incurred when receiving the first request.
 pub struct ProtoCodec {
     schemes: SmallVec<[Box<RpcProtocol>; 4]>,
     cached_scheme: usize,
     tried_num: i32,
 }
 
+impl fmt::Debug for ProtoCodec {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let names = self.schemes
+            .iter()
+            .map(|proto| proto.name())
+            .collect::<Vec<_>>();
+
+        f.debug_struct("ProtoCodec")
+            .field("schemes", &names)
+            .field("cached_scheme", &self.cached_scheme)
+            .field("tried_num", &self.tried_num)
+            .finish()
+    }
+}
+
 impl ProtoCodec {
+    /// Create a new codec that support multiple protocols
     pub fn new(protos: &[Box<RpcProtocol>]) -> Self {
         let schemes: SmallVec<[Box<RpcProtocol>; 4]> =
             protos.iter().map(|proto| proto.new_boxed()).collect();
@@ -114,11 +157,21 @@ impl Encoder for ProtoCodec {
     }
 }
 
+/// Client side codec
 pub struct ProtoCodecClient {
     scheme: Box<RpcProtocol>,
 }
 
+impl fmt::Debug for ProtoCodecClient {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("ProtoCodecClient")
+            .field("scheme", &self.scheme.name())
+            .finish()
+    }
+}
+
 impl ProtoCodecClient {
+    /// Create a new client codec
     pub fn new(proto: Box<RpcProtocol>) -> Self {
         ProtoCodecClient { scheme: proto }
     }
