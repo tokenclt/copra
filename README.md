@@ -177,5 +177,7 @@ copra is free and open source software distributed under the terms of both the
 
 # Acknowledgement
 
-This project is inspired by the brpc framework developped by Baidu Inc. copra
-has similar interface and message protocol to `brpc` framework.
+This project is inspired by the [brpc] framework developped by Baidu Inc. copra
+has similar interface and message protocol to brpc framework.
+
+[brpc]: https://github.com/brpc/brpc
