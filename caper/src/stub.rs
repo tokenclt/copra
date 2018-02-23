@@ -1,3 +1,5 @@
+//! Types that help to generate RPC stubs
+
 use bytes::Bytes;
 use futures::{Async, Future, Poll};
 
@@ -9,6 +11,10 @@ use service::MethodError;
 
 type ResponsePackage = (RpcResponseMeta, Bytes);
 
+/// Bind a stub to a [`Channel`]
+///
+/// [`Channel`]: ../channel/struct.Channel.html
+#[allow(missing_debug_implementations)]
 #[derive(Clone)]
 pub struct RpcWrapper<'a, C: Clone> {
     codec: C,
@@ -16,6 +22,7 @@ pub struct RpcWrapper<'a, C: Clone> {
 }
 
 impl<'a, C: Clone> RpcWrapper<'a, C> {
+    /// Create a binding from a codec and a reference to channel
     pub fn new(codec: C, channel: &'a Channel) -> Self {
         RpcWrapper { codec, channel }
     }
@@ -25,7 +32,7 @@ impl<'a, C> RpcWrapper<'a, C>
 where
     C: MethodCodec + Clone,
 {
-    // inverse of request and response
+    /// Issue a request and obtain a future
     pub fn call(&'a self, bundle: (C::Response, String, String)) -> StubFuture<C> {
         let (req, service_name, method_name) = bundle;
         let channel_fut = match self.codec.encode(req) {
@@ -53,6 +60,8 @@ fn errno_to_result(result: ResponsePackage) -> Result<Bytes, MethodError> {
     }
 }
 
+/// A future that will resolve to a pair of response and RPC info
+#[derive(Debug)]
 pub struct StubFuture<C> {
     start_usec: u64,
     inner: Option<ChannelFuture>,
@@ -60,6 +69,7 @@ pub struct StubFuture<C> {
 }
 
 impl<C> StubFuture<C> {
+    /// Create a new future
     pub fn new(inner: Option<ChannelFuture>, codec: C) -> Self {
         StubFuture {
             start_usec: 0,
@@ -101,4 +111,6 @@ where
     }
 }
 
+/// [WIP] Information about how the RPC request has been processed
+#[derive(Clone, Debug)]
 pub struct RpcInfo;

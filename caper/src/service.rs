@@ -1,5 +1,9 @@
+//! Internal types helping to provide services
+
 use bytes::Bytes;
 use futures::{Future, IntoFuture};
+use std::error::Error;
+use std::fmt;
 use std::io;
 use tokio_service::NewService;
 
@@ -10,20 +14,33 @@ pub use tokio_service::Service;
 
 type Bundle = (Bytes, Controller);
 
+/// A future that will resolve to a serialized message
 pub type MethodFuture = Box<Future<Item = Bundle, Error = MethodError>>;
 
+/// Type alias of `Service` trait object
+///
+/// This type is used internally by auto-generated stubs.
+#[doc(hidden)]
 pub type EncapService = Box<
     Service<Request = Bundle, Response = Bundle, Error = MethodError, Future = MethodFuture>
         + Send
         + Sync,
 >;
 
+/// Type alias of `NewService` trait object
+///
+/// This type is used internally by auto-generated stubs.
+#[doc(hidden)]
 pub type NewEncapService = Box<
     NewService<Request = Bundle, Response = Bundle, Error = MethodError, Instance = EncapService>
         + Send
         + Sync,
 >;
 
+/// A factory struct that can produce encapsulated service.
+///
+/// An encapsulated service consists of the method codec and the user-defined
+/// processing logic.
 pub struct NewEncapsulatedMethod<S: Send + Sync> {
     inner: Box<
         NewService<Request = Bundle, Response = Bundle, Error = MethodError, Instance = S>
@@ -32,12 +49,22 @@ pub struct NewEncapsulatedMethod<S: Send + Sync> {
     >,
 }
 
+impl<S> fmt::Debug for NewEncapsulatedMethod<S>
+where
+    S: Send + Sync,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "NewEncapsulatedMethod")
+    }
+}
+
 impl<S> NewEncapsulatedMethod<S>
 where
     S: NewService<Request = Bundle, Response = Bundle, Error = MethodError, Instance = S>,
     S: Service<Request = Bundle, Response = Bundle, Error = MethodError, Future = MethodFuture>,
     S: 'static + Send + Sync,
 {
+    /// Create a new instance by boxing
     pub fn new(method: S) -> Self {
         NewEncapsulatedMethod {
             inner: Box::new(method),
@@ -63,25 +90,53 @@ where
     }
 }
 
+// TODO: seperate this into server error and stub error
+/// [WIP] Error return by service providers
 #[derive(Clone, Debug)]
 pub enum MethodError {
-    ChannelConcurrencyLimited,
+    /// [WIP] Other errors that might be worth discussion
     UnknownError,
+    /// Failed to decode message
     CodecError,
 }
 
+impl fmt::Display for MethodError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            MethodError::UnknownError => write!(f, "unknown error produced by server"),
+            MethodError::CodecError => write!(f, "failed to decode message"),
+        }
+    }
+}
+
+impl Error for MethodError {
+    fn description(&self) -> &str {
+        match *self {
+            MethodError::UnknownError => "unknown error",
+            MethodError::CodecError => "codec error",
+        }
+    }
+}
+
+#[doc(hidden)]
 impl From<ProtobufError> for MethodError {
     fn from(_: ProtobufError) -> Self {
         MethodError::CodecError
     }
 }
 
+
+/// A bunble of a codec and a user-defined service
+/// 
+/// This struct is used to provide a unified interface for the request dispatcher.
+#[allow(missing_debug_implementations)]
 pub struct EncapsulatedMethod<C, S> {
     codec: C,
     method: S,
 }
 
 impl<C, S> EncapsulatedMethod<C, S> where {
+    /// Create a new bundle from a codec and a service
     pub fn new(codec: C, method: S) -> Self {
         EncapsulatedMethod {
             codec: codec,

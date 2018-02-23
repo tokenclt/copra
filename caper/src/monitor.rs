@@ -1,3 +1,5 @@
+//! [WIP] Built-in service for monitoring the server
+
 use futures::{Async, AsyncSink, Poll, Sink, StartSend, Stream};
 use std::io;
 use std::sync::Arc;
@@ -8,6 +10,8 @@ use tokio_timer::{Interval, Timer};
 
 use message::{RequestPackage, ResponsePackage};
 
+/// A transport middleware that counts the processed mssages
+#[derive(Debug)]
 pub struct TrafficCounting<T> {
     buffered: Arc<AtomicUsize>,
     flushed: Arc<AtomicUsize>,
@@ -15,6 +19,8 @@ pub struct TrafficCounting<T> {
 }
 
 impl<T> TrafficCounting<T> {
+    /// Create a new transport middleware on top of `io`, store the number in
+    /// `flushed`.
     pub fn new(flushed: Arc<AtomicUsize>, io: T) -> Self {
         TrafficCounting {
             buffered: Arc::new(AtomicUsize::new(0)),
@@ -63,6 +69,11 @@ where
     }
 }
 
+/// A maintainer calculates throughput periodically
+///
+/// This maintainer implements `Stream` so that it can be spawned
+/// as a daemon
+#[derive(Debug)]
 pub struct ThroughputMaintainer {
     interval: Interval,
     finished: Arc<AtomicUsize>,
@@ -71,6 +82,7 @@ pub struct ThroughputMaintainer {
 }
 
 impl ThroughputMaintainer {
+    /// Create a new maintainer, export throughput value to `throughtput`
     pub fn new(timer: Timer, finished: Arc<AtomicUsize>, throughput: Arc<AtomicUsize>) -> Self {
         let interval = timer.interval(Duration::from_secs(1));
         ThroughputMaintainer {

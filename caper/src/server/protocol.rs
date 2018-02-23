@@ -13,6 +13,7 @@ use message::{RequestPackage, ResponsePackage};
 use super::connection::TcpConnection;
 use super::Second;
 
+#[derive(Debug)]
 pub struct MetaServerProtocol {
     protocols: Vec<Box<RpcProtocol>>,
     timer: Timer,

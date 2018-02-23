@@ -66,7 +66,7 @@ pub enum ChannelBuildError {
 impl fmt::Display for ChannelBuildError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            ChannelBuildError::AddrParseError(ref e) => write!(f, "Address parse error: {}", e),
+            ChannelBuildError::AddrParseError(ref e) => write!(f, "address parse error: {}", e),
             ChannelBuildError::ConnectError => write!(f, "connection error"),
         }
     }
@@ -75,7 +75,7 @@ impl fmt::Display for ChannelBuildError {
 impl Error for ChannelBuildError {
     fn description(&self) -> &str {
         match *self {
-            ChannelBuildError::AddrParseError(_) => "failed to parse SocketAddr from raw string",
+            ChannelBuildError::AddrParseError(_) => "failed to parse socket address from raw string",
             ChannelBuildError::ConnectError => "failed to connect to a remote server",
         }
     }
@@ -88,7 +88,7 @@ impl Error for ChannelBuildError {
     }
 }
 
-/// The error occured when sending or receiving packages
+/// [WIP] The error occured when sending or receiving packages
 #[derive(Debug)]
 pub enum ChannelError {
     /// Can not issue new request because the number of pending requests has
@@ -105,7 +105,7 @@ impl fmt::Display for ChannelError {
         match *self {
             ChannelError::ConcurrencyLimitReached => write!(f, "Concurrency limit reached"),
             ChannelError::IoError(ref e) => write!(f, "Io error: {}", e),
-            ChannelError::UnknownError => write!(f, "[WIP] other errors might be worth discussion"),
+            ChannelError::UnknownError => write!(f, "other errors might be worth discussion"),
         }
     }
 }
@@ -192,6 +192,7 @@ enum ConnectMode<'a> {
 /// ```rust
 /// # extern crate caper;
 /// # extern crate tokio_core;
+/// # use std::error::Error;
 /// use caper::ChannelBuilder;
 /// use tokio_core::reactor::Core;
 ///

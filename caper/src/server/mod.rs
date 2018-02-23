@@ -1,9 +1,13 @@
+//! Accept connections and provide services
+
 use bytes::Bytes;
 use tokio_core::reactor::Remote;
 use tokio_proto::TcpServer;
 use tokio_proto::multiplex::Multiplex;
 use tokio_service::{NewService, Service};
 use tokio_timer::Timer;
+use std::error::Error;
+use std::fmt;
 use std::io;
 use std::net::AddrParseError;
 use std::sync::Arc;
@@ -26,10 +30,10 @@ mod protocol;
 
 type Second = u64;
 
-pub type MetaServiceFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
+type MetaServiceFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
 
 #[derive(Clone)]
-pub struct MetaService {
+struct MetaService {
     registry: Arc<ServiceRegistry>,
 }
 
@@ -80,9 +84,33 @@ impl NewService for MetaService {
     }
 }
 
+/// Error raised when building a server
 #[derive(Clone, Debug)]
 pub enum ServerBuildError {
+    /// Failed to parse socket address from string
     AddrParseError(AddrParseError),
+}
+
+impl fmt::Display for ServerBuildError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            ServerBuildError::AddrParseError(ref e) => write!(f, "address parse error {}", e),
+        }
+    }
+}
+
+impl Error for ServerBuildError {
+    fn description(&self) -> &str {
+        match *self {
+            ServerBuildError::AddrParseError(_) => "failed to parse socket address from raw string",
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            ServerBuildError::AddrParseError(ref e) => Some(e),
+        }
+    }
 }
 
 impl From<AddrParseError> for ServerBuildError {
@@ -91,6 +119,33 @@ impl From<AddrParseError> for ServerBuildError {
     }
 }
 
+/// Server factory, which can be used to setup up a new server
+///
+/// You can chain up the methods to configure the channel.
+///
+/// # Examples
+///
+/// ```rust
+/// # extern crate caper;
+/// # extern crate tokio_core;
+/// # use std::error::Error;
+/// use caper::{ServiceRegistry, ServerBuilder};
+///
+/// # fn main() {
+/// #     try_main().unwrap();
+/// # }
+///
+/// # fn try_main() -> Result<(), Box<Error>> {
+/// let mut registry = ServiceRegistry::new();
+///
+/// // add some service to the registry
+///
+/// let server = ServerBuilder::new("127.0.0.1:8000", registry).build()?;
+/// server.start();
+/// # }
+///
+/// ```
+#[derive(Debug)]
 pub struct ServerBuilder<'a> {
     services: ServiceRegistry,
     addr: &'a str,
@@ -102,6 +157,7 @@ pub struct ServerBuilder<'a> {
 }
 
 impl<'a> ServerBuilder<'a> {
+    /// Create a server listening to `addr`
     pub fn new(addr: &'a str, services: ServiceRegistry) -> Self {
         ServerBuilder {
             services,
@@ -114,33 +170,46 @@ impl<'a> ServerBuilder<'a> {
         }
     }
 
+    /// Set the number of event loops
+    ///
+    /// The thread number should not exceed the CPU core number.
+    /// Default to 1.
     pub fn threads(mut self, threads: usize) -> Self {
         self.threads = Some(threads);
         self
     }
 
+    /// [WIP] Set the protocols that the server willing to support
     pub fn protocols(mut self, protocols: Vec<Protocol>) -> Self {
         self.protocols = Some(protocols);
         self
     }
 
+    // TODO: default to no-op
+    /// Keep an idle connection for `idle` seconds before it is
+    /// shuted down by the server
+    ///
+    /// Default to 60 seconds
     pub fn idle_secs(mut self, idle: Second) -> Self {
         self.idle_secs = Some(idle);
         self
     }
 
+    /// [WIP] Server monitor, expose throught to the shared variable
+    /// `throughput`
     pub fn throughput(mut self, throughput: Arc<AtomicUsize>, remote: Remote) -> Self {
         self.throughput = Some(throughput);
         self.remote = Some(remote);
         self
     }
 
+    /// Consume the builder and build
     pub fn build(self) -> Result<Server, ServerBuildError> {
         let finished = Arc::new(AtomicUsize::new(0));
         let threads = self.threads.unwrap_or(1);
         let protocols = self.protocols
             .unwrap_or(vec![Protocol::Brpc, Protocol::Http]);
-        let idle_secs = self.idle_secs.unwrap_or(8);
+        let idle_secs = self.idle_secs.unwrap_or(60);
         let throughput = self.throughput.unwrap_or(Arc::new(AtomicUsize::new(0)));
 
         let timer = Timer::default();
@@ -166,6 +235,8 @@ impl<'a> ServerBuilder<'a> {
     }
 }
 
+/// A RPC server
+#[derive(Debug)]
 pub struct Server {
     services: Arc<ServiceRegistry>,
     listener: TcpServer<Multiplex, MetaServerProtocol>,
@@ -176,6 +247,9 @@ pub struct Server {
 }
 
 impl Server {
+    /// Run the server
+    ///
+    /// This method will block the current thread forever
     pub fn start(&self) {
         if let Some(ref remote) = self.remote {
             let maintainer = ThroughputMaintainer::new(

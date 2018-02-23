@@ -62,6 +62,12 @@ pub trait RpcProtocol: Sync + Send {
     fn name(&self) -> &'static str;
 }
 
+impl fmt::Debug for RpcProtocol {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name())
+    }
+}
+
 /// Server side codec that can deduce protocol from byte stream
 ///
 /// Server can provide services to clients that use different protocols.
@@ -69,26 +75,27 @@ pub trait RpcProtocol: Sync + Send {
 /// it succeeds in decoding the request. Since `caper` use keep-alive connections
 /// to exchange messages, this match is cached so that the protocol resolution
 /// overhead is only incurred when receiving the first request.
+#[derive(Debug)]
 pub struct ProtoCodec {
     schemes: SmallVec<[Box<RpcProtocol>; 4]>,
     cached_scheme: usize,
     tried_num: i32,
 }
 
-impl fmt::Debug for ProtoCodec {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let names = self.schemes
-            .iter()
-            .map(|proto| proto.name())
-            .collect::<Vec<_>>();
+// impl fmt::Debug for ProtoCodec {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         let names = self.schemes
+//             .iter()
+//             .map(|proto| proto.name())
+//             .collect::<Vec<_>>();
 
-        f.debug_struct("ProtoCodec")
-            .field("schemes", &names)
-            .field("cached_scheme", &self.cached_scheme)
-            .field("tried_num", &self.tried_num)
-            .finish()
-    }
-}
+//         f.debug_struct("ProtoCodec")
+//             .field("schemes", &names)
+//             .field("cached_scheme", &self.cached_scheme)
+//             .field("tried_num", &self.tried_num)
+//             .finish()
+//     }
+// }
 
 impl ProtoCodec {
     /// Create a new codec that support multiple protocols
