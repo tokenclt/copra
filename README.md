@@ -1,6 +1,6 @@
 RPC framework in Rust
 
-`copra` is a [RPC] framework aimed at ease of use and configuration.
+`copra` is an [RPC] framework aimed at ease of use and configuration.
 It can generate most of the boilerplate code in server and client side.
 You only need to implement the core logic of services.
 
