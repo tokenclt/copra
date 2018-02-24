@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 # Used by Travis CI
 
 set -ex
