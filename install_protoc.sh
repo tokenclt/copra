@@ -12,9 +12,10 @@ if [ -n "$PROTOBUF_VERSION"]; then
     error "PROTOBUF_VERSION is not set"
 fi
 
-curl -sL https://github.com/google/protobuf/archive/v$PROTOBUF_VERSION.tar.gz | tar zx
+if [! -f "/home/travis/bin/protoc"]; then
+    curl -sL https://github.com/google/protobuf/archive/v$PROTOBUF_VERSION.tar.gz | tar zx
 
-cd protobuf-$PROTOBUF_VERSION
-
-./autogen.sh
-./configure --prefix=/home/travis && make && sudo make install
+    cd protobuf-$PROTOBUF_VERSION
+    ./autogen.sh
+    ./configure --prefix=/home/travis && make && sudo make install
+fi

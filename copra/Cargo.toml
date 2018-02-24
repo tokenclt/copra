@@ -8,6 +8,9 @@ authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
 keywords = ["RPC"]
 license = "MIT/Apache-2.0"
 
+[badges]
+travis-ci = { repository = "AprliRainkun/copra" }
+
 [dependencies]
 bytes = "0.4"
 futures = "0.1"
