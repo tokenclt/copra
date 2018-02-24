@@ -17,4 +17,4 @@ curl -sL https://github.com/google/protobuf/archive/v$PROTOBUF_VERSION.tar.gz | 
 cd protobuf-$PROTOBUF_VERSION
 
 ./autogen.sh
-./configure --prefix=/home/travis && make -j2 && make install
+./configure --prefix=/home/travis && make -j2 && sudo make install

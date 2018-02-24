@@ -3,6 +3,7 @@ name = "copra"
 version = "0.1.0"
 description = "A RPC framework (still in early development stage)"
 documentation = "https://docs.rs/copra/0.1.0/copra/"
+homepage = "https://github.com/AprliRainkun/copra"
 authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
 keywords = ["RPC"]
 license = "MIT/Apache-2.0"
