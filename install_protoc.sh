@@ -12,7 +12,7 @@ if [ -n "$PROTOBUF_VERSION"]; then
     error "PROTOBUF_VERSION is not set"
 fi
 
-if [! -f "/home/travis/bin/protoc"]; then
+if [ ! -f "/home/travis/bin/protoc"]; then
     curl -sL https://github.com/google/protobuf/archive/v$PROTOBUF_VERSION.tar.gz | tar zx
 
     cd protobuf-$PROTOBUF_VERSION
