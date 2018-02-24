@@ -1,6 +1,6 @@
 [package]
 name = "copra"
-version = "0.1.0"
+version = "0.1.1"
 description = "A RPC framework (still in early development stage)"
 documentation = "https://docs.rs/copra/0.1.0/copra/"
 homepage = "https://github.com/AprliRainkun/copra"
