@@ -167,6 +167,10 @@ More examples can be found in `copra-examples`.
 
 This project is still in the early development stage. It basically works, but 
 you should use it with caution. Any form of contribution is appreciated.
+
+# Project structure
+
+
 # License
 
 copra is free and open source software distributed under the terms of both the

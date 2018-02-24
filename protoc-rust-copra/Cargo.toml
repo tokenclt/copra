@@ -3,6 +3,7 @@ name = "protoc-rust-copra"
 version = "0.1.0"
 authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
 description = "Code generator works with the copra RPC framework"
+documentation = "https://docs.rs/protoc-rust-copra/0.1.0/protoc_rust_copra/"
 keywords = ["RPC"]
 license = "MIT/Apache-2.0"
 

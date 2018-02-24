@@ -1,0 +1,8 @@
+[package]
+name = "copra-compile"
+version = "0.1.0"
+authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
+description = "Generate rust code from .proto files used by the main copra crate"
+
+[dependencies]
+protoc-rust = "1.4"

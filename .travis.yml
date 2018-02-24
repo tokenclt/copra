@@ -1,0 +1,21 @@
+sudo: false
+
+language: rust
+
+matrix:
+  include:
+    - rust: stable
+      env: PROTOBUF_VERSION=3.5.1
+
+cache: cargo
+
+before_install:
+  - sudo apt-get install autoconf automake libtool curl make g++ unzip
+  - ./install_protoc.sh
+  - PATH=/home/travis/bin:$PATH protoc --version
+
+script:
+  - rustc --version
+  - PATH=/home/travis/bin:$PATH cargo run --manifest-path=copra-compile/Cargo.toml
+  - PATH=/home/travis/bin:$PATH
+  - cargo build --all
