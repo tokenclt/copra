@@ -163,13 +163,17 @@ More examples can be found in `copra-examples`.
 
 [build-scripts]: https://doc.rust-lang.org/cargo/reference/build-scripts.html
 
+# Project structure
+
+* `copra`: main crate
+* `copra-compile`: generate protobuf runtime code used in the main `copra` crate
+* `copra-examples`: runnable examples
+* `protoc-rust-copra`: codegen for copra
+
 # Note
 
 This project is still in the early development stage. It basically works, but 
 you should use it with caution. Any form of contribution is appreciated.
-
-# Project structure
-
 
 # License
 
