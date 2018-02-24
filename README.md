@@ -182,6 +182,11 @@ you should use it with caution. Any form of contribution is appreciated.
 copra is free and open source software distributed under the terms of both the
 [MIT License] and the [Apache License 2.0].
 
+# Change log
+
+* `copra` v0.1.1: Add homepage and documentation in cargo manifest files.
+* `protoc-rust-copra1 v0.1.1: Add homepage and documentation in cargo manifest files.
+
 [MIT License]: LICENSE-MIT
 [Apache License 2.0]: LICENSE-APACHE
 
