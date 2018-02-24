@@ -14,12 +14,7 @@ fi
 
 curl -sL https://github.com/google/protobuf/archive/v$PROTOBUF_VERSION.tar.gz | tar zx
 
-echo "script downloaded"
-
 cd protobuf-$PROTOBUF_VERSION
 
 ./autogen.sh
-
-echo "autogen finished"
-
 ./configure --prefix=/home/travis && make && sudo make install
