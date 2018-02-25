@@ -1,6 +1,7 @@
 RPC framework in Rust
 
 [![Build Status](https://travis-ci.org/AprliRainkun/copra.svg?branch=master)](https://travis-ci.org/AprliRainkun/copra)
+[![Crates.io](https://img.shields.io/crates/v/copra.svg)](https://crates.io/crates/copra)
 
 `copra` is an [RPC] framework aimed at ease of use and configuration.
 It can generate most of the boilerplate code in server and client side.
@@ -8,9 +9,9 @@ You only need to implement the core logic of services.
 
 [RPC]: https://en.wikipedia.org/wiki/Remote_procedure_call
 
-# Installation
+## Installation
 
-## Protocol compiler installation
+### Protocol compiler installation
 
 `copra` uses [Protocol Buffers][protobuf] (a.k.a. protobuf) to exchange messages
 and describe service signatures. The message and service descriptions are written
@@ -24,7 +25,7 @@ Visit [this website] and download
 [protobuf]: https://developers.google.com/protocol-buffers/
 [this website]: https://github.com/google/protobuf/releases
 
-## Cargo setup
+### Cargo setup
 
 Add this to your `Cargo.toml`:
 
@@ -38,7 +39,7 @@ tokio-core = "0.1"
 protoc-rust-copra = "0.1"
 ```
 
-# Quick start
+## Quick start
 
 Here is an example of implementing an echo RPC. First, create a file named
 `echo.proto` and put it in the manifest directory (i.e. next to `Cargo.toml`).
@@ -165,36 +166,36 @@ More examples can be found in `copra-examples`.
 
 [build-scripts]: https://doc.rust-lang.org/cargo/reference/build-scripts.html
 
-# Project structure
+## Project structure
 
 * `copra`: main crate
 * `copra-compile`: generate protobuf runtime code used in the main `copra` crate
 * `copra-examples`: runnable examples
 * `protoc-rust-copra`: codegen for copra
 
-# Note
+## Note
 
 This project is still in the early development stage. It basically works, but 
 you should use it with caution. Any form of contribution is appreciated.
 
-# License
+## License
 
 copra is free and open source software distributed under the terms of both the
 [MIT License] and the [Apache License 2.0].
 
-# Change log
-## `copra`
+## Change log
+### `copra`
 
 * v0.1.1: Add homepage and documentation in cargo manifest files.
 
-## `protoc-rust-copra`
+### `protoc-rust-copra`
 
 * v0.1.1: Add homepage and documentation in cargo manifest files.
 
 [MIT License]: LICENSE-MIT
 [Apache License 2.0]: LICENSE-APACHE
 
-# Acknowledgement
+## Acknowledgement
 
 This project is inspired by the [brpc] framework developped by Baidu Inc. copra
 has similar interface and message protocol to brpc framework.
