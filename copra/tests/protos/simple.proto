@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message Simple {
+    int32 int_val = 1;
+    bool bool_val = 2;
+    string str_val = 3;
+}
+
+service Echo {
+    rpc echo(Simple) returns (Simple);
+}

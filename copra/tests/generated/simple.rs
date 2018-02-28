@@ -22,116 +22,116 @@ use protobuf::Message as Message_imported_for_functions;
 use protobuf::ProtobufEnum as ProtobufEnum_imported_for_functions;
 
 #[derive(PartialEq,Clone,Default)]
-pub struct TestMessage {
+pub struct Simple {
     // message fields
-    pub string_field: ::std::string::String,
-    pub i32_field: i32,
-    pub float_field: f32,
+    pub int_val: i32,
+    pub bool_val: bool,
+    pub str_val: ::std::string::String,
     // special fields
     unknown_fields: ::protobuf::UnknownFields,
     cached_size: ::protobuf::CachedSize,
 }
 
 // see codegen.rs for the explanation why impl Sync explicitly
-unsafe impl ::std::marker::Sync for TestMessage {}
+unsafe impl ::std::marker::Sync for Simple {}
 
-impl TestMessage {
-    pub fn new() -> TestMessage {
+impl Simple {
+    pub fn new() -> Simple {
         ::std::default::Default::default()
     }
 
-    pub fn default_instance() -> &'static TestMessage {
-        static mut instance: ::protobuf::lazy::Lazy<TestMessage> = ::protobuf::lazy::Lazy {
+    pub fn default_instance() -> &'static Simple {
+        static mut instance: ::protobuf::lazy::Lazy<Simple> = ::protobuf::lazy::Lazy {
             lock: ::protobuf::lazy::ONCE_INIT,
-            ptr: 0 as *const TestMessage,
+            ptr: 0 as *const Simple,
         };
         unsafe {
-            instance.get(TestMessage::new)
+            instance.get(Simple::new)
         }
     }
 
-    // string string_field = 1;
+    // int32 int_val = 1;
 
-    pub fn clear_string_field(&mut self) {
-        self.string_field.clear();
+    pub fn clear_int_val(&mut self) {
+        self.int_val = 0;
     }
 
     // Param is passed by value, moved
-    pub fn set_string_field(&mut self, v: ::std::string::String) {
-        self.string_field = v;
+    pub fn set_int_val(&mut self, v: i32) {
+        self.int_val = v;
+    }
+
+    pub fn get_int_val(&self) -> i32 {
+        self.int_val
+    }
+
+    fn get_int_val_for_reflect(&self) -> &i32 {
+        &self.int_val
+    }
+
+    fn mut_int_val_for_reflect(&mut self) -> &mut i32 {
+        &mut self.int_val
+    }
+
+    // bool bool_val = 2;
+
+    pub fn clear_bool_val(&mut self) {
+        self.bool_val = false;
+    }
+
+    // Param is passed by value, moved
+    pub fn set_bool_val(&mut self, v: bool) {
+        self.bool_val = v;
+    }
+
+    pub fn get_bool_val(&self) -> bool {
+        self.bool_val
+    }
+
+    fn get_bool_val_for_reflect(&self) -> &bool {
+        &self.bool_val
+    }
+
+    fn mut_bool_val_for_reflect(&mut self) -> &mut bool {
+        &mut self.bool_val
+    }
+
+    // string str_val = 3;
+
+    pub fn clear_str_val(&mut self) {
+        self.str_val.clear();
+    }
+
+    // Param is passed by value, moved
+    pub fn set_str_val(&mut self, v: ::std::string::String) {
+        self.str_val = v;
     }
 
     // Mutable pointer to the field.
     // If field is not initialized, it is initialized with default value first.
-    pub fn mut_string_field(&mut self) -> &mut ::std::string::String {
-        &mut self.string_field
+    pub fn mut_str_val(&mut self) -> &mut ::std::string::String {
+        &mut self.str_val
     }
 
     // Take field
-    pub fn take_string_field(&mut self) -> ::std::string::String {
-        ::std::mem::replace(&mut self.string_field, ::std::string::String::new())
+    pub fn take_str_val(&mut self) -> ::std::string::String {
+        ::std::mem::replace(&mut self.str_val, ::std::string::String::new())
     }
 
-    pub fn get_string_field(&self) -> &str {
-        &self.string_field
+    pub fn get_str_val(&self) -> &str {
+        &self.str_val
     }
 
-    fn get_string_field_for_reflect(&self) -> &::std::string::String {
-        &self.string_field
+    fn get_str_val_for_reflect(&self) -> &::std::string::String {
+        &self.str_val
     }
 
-    fn mut_string_field_for_reflect(&mut self) -> &mut ::std::string::String {
-        &mut self.string_field
-    }
-
-    // int32 i32_field = 2;
-
-    pub fn clear_i32_field(&mut self) {
-        self.i32_field = 0;
-    }
-
-    // Param is passed by value, moved
-    pub fn set_i32_field(&mut self, v: i32) {
-        self.i32_field = v;
-    }
-
-    pub fn get_i32_field(&self) -> i32 {
-        self.i32_field
-    }
-
-    fn get_i32_field_for_reflect(&self) -> &i32 {
-        &self.i32_field
-    }
-
-    fn mut_i32_field_for_reflect(&mut self) -> &mut i32 {
-        &mut self.i32_field
-    }
-
-    // float float_field = 3;
-
-    pub fn clear_float_field(&mut self) {
-        self.float_field = 0.;
-    }
-
-    // Param is passed by value, moved
-    pub fn set_float_field(&mut self, v: f32) {
-        self.float_field = v;
-    }
-
-    pub fn get_float_field(&self) -> f32 {
-        self.float_field
-    }
-
-    fn get_float_field_for_reflect(&self) -> &f32 {
-        &self.float_field
-    }
-
-    fn mut_float_field_for_reflect(&mut self) -> &mut f32 {
-        &mut self.float_field
+    fn mut_str_val_for_reflect(&mut self) -> &mut ::std::string::String {
+        &mut self.str_val
     }
 }
 
-impl ::protobuf::Message for TestMessage {
+impl ::protobuf::Message for Simple {
     fn is_initialized(&self) -> bool {
         true
     }
@@ -141,21 +141,21 @@ impl ::protobuf::Message for TestMessage {
             let (field_number, wire_type) = is.read_tag_unpack()?;
             match field_number {
                 1 => {
-                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.string_field)?;
+                    if wire_type != ::protobuf::wire_format::WireTypeVarint {
+                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
+                    }
+                    let tmp = is.read_int32()?;
+                    self.int_val = tmp;
                 },
                 2 => {
                     if wire_type != ::protobuf::wire_format::WireTypeVarint {
                         return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
                     }
-                    let tmp = is.read_int32()?;
-                    self.i32_field = tmp;
+                    let tmp = is.read_bool()?;
+                    self.bool_val = tmp;
                 },
                 3 => {
-                    if wire_type != ::protobuf::wire_format::WireTypeFixed32 {
-                        return ::std::result::Result::Err(::protobuf::rt::unexpected_wire_type(wire_type));
-                    }
-                    let tmp = is.read_float()?;
-                    self.float_field = tmp;
+                    ::protobuf::rt::read_singular_proto3_string_into(wire_type, is, &mut self.str_val)?;
                 },
                 _ => {
                     ::protobuf::rt::read_unknown_or_skip_group(field_number, wire_type, is, self.mut_unknown_fields())?;
@@ -169,14 +169,14 @@ impl ::protobuf::Message for TestMessage {
     #[allow(unused_variables)]
     fn compute_size(&self) -> u32 {
         let mut my_size = 0;
-        if !self.string_field.is_empty() {
-            my_size += ::protobuf::rt::string_size(1, &self.string_field);
+        if self.int_val != 0 {
+            my_size += ::protobuf::rt::value_size(1, self.int_val, ::protobuf::wire_format::WireTypeVarint);
         }
-        if self.i32_field != 0 {
-            my_size += ::protobuf::rt::value_size(2, self.i32_field, ::protobuf::wire_format::WireTypeVarint);
+        if self.bool_val != false {
+            my_size += 2;
         }
-        if self.float_field != 0. {
-            my_size += 5;
+        if !self.str_val.is_empty() {
+            my_size += ::protobuf::rt::string_size(3, &self.str_val);
         }
         my_size += ::protobuf::rt::unknown_fields_size(self.get_unknown_fields());
         self.cached_size.set(my_size);
@@ -184,14 +184,14 @@ impl ::protobuf::Message for TestMessage {
     }
 
     fn write_to_with_cached_sizes(&self, os: &mut ::protobuf::CodedOutputStream) -> ::protobuf::ProtobufResult<()> {
-        if !self.string_field.is_empty() {
-            os.write_string(1, &self.string_field)?;
+        if self.int_val != 0 {
+            os.write_int32(1, self.int_val)?;
         }
-        if self.i32_field != 0 {
-            os.write_int32(2, self.i32_field)?;
+        if self.bool_val != false {
+            os.write_bool(2, self.bool_val)?;
         }
-        if self.float_field != 0. {
-            os.write_float(3, self.float_field)?;
+        if !self.str_val.is_empty() {
+            os.write_string(3, &self.str_val)?;
         }
         os.write_unknown_fields(self.get_unknown_fields())?;
         ::std::result::Result::Ok(())
@@ -224,12 +224,12 @@ impl ::protobuf::Message for TestMessage {
     }
 }
 
-impl ::protobuf::MessageStatic for TestMessage {
-    fn new() -> TestMessage {
-        TestMessage::new()
+impl ::protobuf::MessageStatic for Simple {
+    fn new() -> Simple {
+        Simple::new()
     }
 
-    fn descriptor_static(_: ::std::option::Option<TestMessage>) -> &'static ::protobuf::reflect::MessageDescriptor {
+    fn descriptor_static(_: ::std::option::Option<Simple>) -> &'static ::protobuf::reflect::MessageDescriptor {
         static mut descriptor: ::protobuf::lazy::Lazy<::protobuf::reflect::MessageDescriptor> = ::protobuf::lazy::Lazy {
             lock: ::protobuf::lazy::ONCE_INIT,
             ptr: 0 as *const ::protobuf::reflect::MessageDescriptor,
@@ -237,23 +237,23 @@ impl ::protobuf::MessageStatic for TestMessage {
         unsafe {
             descriptor.get(|| {
                 let mut fields = ::std::vec::Vec::new();
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
-                    "string_field",
-                    TestMessage::get_string_field_for_reflect,
-                    TestMessage::mut_string_field_for_reflect,
-                ));
                 fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeInt32>(
-                    "i32_field",
-                    TestMessage::get_i32_field_for_reflect,
-                    TestMessage::mut_i32_field_for_reflect,
+                    "int_val",
+                    Simple::get_int_val_for_reflect,
+                    Simple::mut_int_val_for_reflect,
                 ));
-                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeFloat>(
-                    "float_field",
-                    TestMessage::get_float_field_for_reflect,
-                    TestMessage::mut_float_field_for_reflect,
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeBool>(
+                    "bool_val",
+                    Simple::get_bool_val_for_reflect,
+                    Simple::mut_bool_val_for_reflect,
                 ));
-                ::protobuf::reflect::MessageDescriptor::new::<TestMessage>(
-                    "TestMessage",
+                fields.push(::protobuf::reflect::accessor::make_simple_field_accessor::<_, ::protobuf::types::ProtobufTypeString>(
+                    "str_val",
+                    Simple::get_str_val_for_reflect,
+                    Simple::mut_str_val_for_reflect,
+                ));
+                ::protobuf::reflect::MessageDescriptor::new::<Simple>(
+                    "Simple",
                     fields,
                     file_descriptor_proto()
                 )
@@ -262,32 +262,32 @@ impl ::protobuf::MessageStatic for TestMessage {
     }
 }
 
-impl ::protobuf::Clear for TestMessage {
+impl ::protobuf::Clear for Simple {
     fn clear(&mut self) {
-        self.clear_string_field();
-        self.clear_i32_field();
-        self.clear_float_field();
+        self.clear_int_val();
+        self.clear_bool_val();
+        self.clear_str_val();
         self.unknown_fields.clear();
     }
 }
 
-impl ::std::fmt::Debug for TestMessage {
+impl ::std::fmt::Debug for Simple {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         ::protobuf::text_format::fmt(self, f)
     }
 }
 
-impl ::protobuf::reflect::ProtobufValue for TestMessage {
+impl ::protobuf::reflect::ProtobufValue for Simple {
     fn as_ref(&self) -> ::protobuf::reflect::ProtobufValueRef {
         ::protobuf::reflect::ProtobufValueRef::Message(self)
     }
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\x1ccopra/src/message/test.proto\"n\n\x0bTestMessage\x12!\n\x0cstring_\
-    field\x18\x01\x20\x01(\tR\x0bstringField\x12\x1b\n\ti32_field\x18\x02\
-    \x20\x01(\x05R\x08i32Field\x12\x1f\n\x0bfloat_field\x18\x03\x20\x01(\x02\
-    R\nfloatFieldb\x06proto3\
+    \n\x1fcopra/tests/protos/simple.proto\"U\n\x06Simple\x12\x17\n\x07int_va\
+    l\x18\x01\x20\x01(\x05R\x06intVal\x12\x19\n\x08bool_val\x18\x02\x20\x01(\
+    \x08R\x07boolVal\x12\x17\n\x07str_val\x18\x03\x20\x01(\tR\x06strVal2\x20\
+    \n\x04Echo\x12\x18\n\x04echo\x12\x07.Simple\x1a\x07.Simpleb\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {
