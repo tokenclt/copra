@@ -4,7 +4,7 @@
 //!
 //! # Examples
 //!
-//! ```rust
+//! ```no_run
 //! # extern crate copra;
 //! # extern crate tokio_core;
 //! # use std::error::Error;
@@ -15,9 +15,10 @@
 //! #     try_main().unwrap();
 //! # }
 //! # fn try_main() -> Result<(), Box<Error>> {
-//! let core = Core::new()?;
+//! let mut core = Core::new()?;
 //! let builder = ChannelBuilder::single_server("127.0.0.1:8000", core.handle());
 //! let channel = core.run(builder.build())?;
+//! # Ok(())
 //! # }
 //! ```
 

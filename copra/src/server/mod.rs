@@ -2,7 +2,7 @@
 //!
 //! # Examples
 //!
-//! ```rust
+//! ```no_run
 //! # extern crate copra;
 //! # extern crate tokio_core;
 //! # use std::error::Error;
@@ -18,6 +18,7 @@
 //!
 //! let server = ServerBuilder::new("127.0.0.1:8000", registry).build()?;
 //! server.start();
+//! # Ok(())
 //! # }
 //! ```
 

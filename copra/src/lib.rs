@@ -60,7 +60,7 @@
 //! Next, create a [`build.rs`][build-scripts] in the manifest directory, and add this to
 //! it:
 //!
-//! ```no_run
+//! ```ignore
 //! extern crate protoc_rust_copra;
 //!
 //! fn main() {
@@ -77,7 +77,7 @@
 //!
 //! Then, add this to `main.rs`:
 //!
-//! ```no_run
+//! ```ignore
 //! extern crate copra;
 //! extern crate futures;
 //! extern crate tokio_core;

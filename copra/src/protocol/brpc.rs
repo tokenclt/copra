@@ -119,10 +119,12 @@ impl RpcProtocol for BrpcProtocol {
 
 #[cfg(test)]
 mod test {
+    use rand::{Rng, SeedableRng, XorShiftRng};
+    use protobuf::CodedOutputStream;
+
     use super::*;
     use message::{RpcRequestMeta, TestMessage};
     // TODO: use a simpler random engine
-    use rand::{Rng, SeedableRng, XorShiftRng};
 
     const CORRELATION_ID: u64 = 10_u64;
     const SERVICE: &'static str = "TestService";
