@@ -92,7 +92,7 @@ where
 
 // TODO: seperate this into server error and stub error
 /// [WIP] Error return by service providers
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum MethodError {
     /// [WIP] Other errors that might be worth discussion
     UnknownError,

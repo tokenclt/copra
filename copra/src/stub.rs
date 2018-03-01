@@ -112,5 +112,5 @@ where
 }
 
 /// [WIP] Information about how the RPC request has been processed
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct RpcInfo;
