@@ -33,8 +33,10 @@ pub struct {}<'a> {{",
         gen = gen
             + &format!(
                 r"
-    {}: ::copra::stub::RpcWrapper<'a,
-        ::copra::codec::ProtobufCodec<{}, {}>>,
+    {}: ::copra::stub::RpcWrapper<
+        'a,
+        ::copra::codec::ProtobufCodec<{}, {}>,
+    >,
 ",
                 wrap, resp, req
             );
@@ -55,7 +57,8 @@ impl<'a> {}<'a> {{
             + &format!(
                 r"
             {}: ::copra::stub::RpcWrapper::new(
-                ::copra::codec::ProtobufCodec::new(), channel
+                ::copra::codec::ProtobufCodec::new(),
+                channel
             ),
 ",
                 wrap

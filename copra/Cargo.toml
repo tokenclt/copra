@@ -2,11 +2,12 @@
 name = "copra"
 version = "0.1.1"
 description = "A RPC framework (still in early development stage)"
+authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
+license = "MIT/Apache-2.0"
+keywords = ["rpc", "network"]
 documentation = "https://docs.rs/copra/0.1.0/copra/"
 homepage = "https://github.com/AprliRainkun/copra"
-authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
-keywords = ["RPC"]
-license = "MIT/Apache-2.0"
+categories = ["Network programming"]
 
 [badges]
 travis-ci = { repository = "AprliRainkun/copra" }

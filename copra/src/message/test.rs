@@ -284,10 +284,10 @@ impl ::protobuf::reflect::ProtobufValue for TestMessage {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\x1ccopra/src/message/test.proto\"n\n\x0bTestMessage\x12!\n\x0cstring_\
-    field\x18\x01\x20\x01(\tR\x0bstringField\x12\x1b\n\ti32_field\x18\x02\
-    \x20\x01(\x05R\x08i32Field\x12\x1f\n\x0bfloat_field\x18\x03\x20\x01(\x02\
-    R\nfloatFieldb\x06proto3\
+    \n\x17copra/protos/test.proto\"n\n\x0bTestMessage\x12!\n\x0cstring_field\
+    \x18\x01\x20\x01(\tR\x0bstringField\x12\x1b\n\ti32_field\x18\x02\x20\x01\
+    (\x05R\x08i32Field\x12\x1f\n\x0bfloat_field\x18\x03\x20\x01(\x02R\nfloat\
+    Fieldb\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

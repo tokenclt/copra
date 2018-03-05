@@ -3,8 +3,9 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
+use tokio_service::NewService;
 
-use service::{BoxedNewUnifiedMethod, BoxedUnifiedMethod};
+use service::{NewUnifiedMethod, UnifiedMethod};
 
 /// Dispatcher can not find the RPC method
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -40,7 +41,7 @@ impl Error for DispatchError {
 /// This struct is required to build a server. Service providers should add
 /// their services to this struct.
 pub struct ServiceRegistry {
-    registry: HashMap<String, HashMap<String, BoxedNewUnifiedMethod>>,
+    registry: HashMap<String, HashMap<String, NewUnifiedMethod>>,
 }
 
 impl fmt::Debug for ServiceRegistry {
@@ -83,7 +84,7 @@ impl ServiceRegistry {
         &self,
         service_name: String,
         method_name: String,
-    ) -> Result<BoxedUnifiedMethod, DispatchError> {
+    ) -> Result<UnifiedMethod, DispatchError> {
         self.registry
             .get(&service_name)
             .ok_or(DispatchError::ServiceNotFound(service_name.clone()))
@@ -102,7 +103,7 @@ impl ServiceRegistry {
 /// need to touch it.
 pub trait Registrant {
     /// Get a list of name-method pairs.
-    fn methods(&self) -> Vec<(String, BoxedNewUnifiedMethod)>;
+    fn methods(&self) -> Vec<(String, NewUnifiedMethod)>;
 }
 
 /// Link service name to a registrant

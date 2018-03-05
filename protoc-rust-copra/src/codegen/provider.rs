@@ -25,7 +25,8 @@ pub fn generate_service_trait(
     type {}: ::futures::Future<
         Item = ({}, ::copra::controller::Controller), 
         Error = ::copra::service::ProviderSetError,
-    > + 'static;
+    > 
+        + 'static;
 ",
                 future, resp
             );
@@ -39,7 +40,10 @@ pub fn generate_service_trait(
         gen = gen
             + &format!(
                 r"
-    fn {}(&self, msg: ({}, ::copra::controller::Controller)) -> Self::{};
+    fn {}(
+        &self, 
+        msg: ({}, ::copra::controller::Controller)
+    ) -> Self::{};
 ",
                 method, req, future
             );
@@ -94,10 +98,10 @@ impl<S> ::copra::dispatcher::Registrant for {}<S>
 where
     S: {} + Clone + Send + Sync + 'static,
 {{
-    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {{
+    fn methods(&self) -> Vec<(String, ::copra::service::NewUnifiedMethod)> {{
         let mut entries = Vec::new();
         let provider = &self.provider;
-    ",
+",
             reg_name, trait_name
         );
 
@@ -130,15 +134,13 @@ where
 
             let wrap = Wrapper(provider.clone());
             let method = ::copra::service::CodecMethodBundle::new(
-                ::copra::codec::ProtobufCodec::new(), wrap
+                ::copra::codec::ProtobufCodec::new(), 
+                wrap
             );
             let new_method = ::copra::service::NewUnifiedMethod::new(method);
-            entries.push((
-                "{}".to_string(), 
-                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
-            ));
+            entries.push(("{}".to_string(), new_method));
         }}
-        "#,
+"#,
                 trait_name, req, resp, trait_name, future, method, method
             );
     }

@@ -9,16 +9,24 @@ pub trait DemoService {
     type GreetToFuture: ::futures::Future<
         Item = (super::demo::GreetMessage, ::copra::controller::Controller), 
         Error = ::copra::service::ProviderSetError,
-    > + 'static;
+    > 
+        + 'static;
 
     type IsPrimeFuture: ::futures::Future<
         Item = (super::demo::PrimeResponse, ::copra::controller::Controller), 
         Error = ::copra::service::ProviderSetError,
-    > + 'static;
+    > 
+        + 'static;
 
-    fn greet_to(&self, msg: (super::demo::GreetMessage, ::copra::controller::Controller)) -> Self::GreetToFuture;
+    fn greet_to(
+        &self, 
+        msg: (super::demo::GreetMessage, ::copra::controller::Controller)
+    ) -> Self::GreetToFuture;
 
-    fn is_prime(&self, msg: (super::demo::PrimeRequest, ::copra::controller::Controller)) -> Self::IsPrimeFuture;
+    fn is_prime(
+        &self, 
+        msg: (super::demo::PrimeRequest, ::copra::controller::Controller)
+    ) -> Self::IsPrimeFuture;
 }
 
 pub struct DemoRegistrant<S> {
@@ -35,10 +43,10 @@ impl<S> ::copra::dispatcher::Registrant for DemoRegistrant<S>
 where
     S: DemoService + Clone + Send + Sync + 'static,
 {
-    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {
+    fn methods(&self) -> Vec<(String, ::copra::service::NewUnifiedMethod)> {
         let mut entries = Vec::new();
         let provider = &self.provider;
-    
+
         {
             #[derive(Clone)]
             struct Wrapper<S: Clone>(S);
@@ -59,15 +67,13 @@ where
 
             let wrap = Wrapper(provider.clone());
             let method = ::copra::service::CodecMethodBundle::new(
-                ::copra::codec::ProtobufCodec::new(), wrap
+                ::copra::codec::ProtobufCodec::new(), 
+                wrap
             );
             let new_method = ::copra::service::NewUnifiedMethod::new(method);
-            entries.push((
-                "greet_to".to_string(), 
-                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
-            ));
+            entries.push(("greet_to".to_string(), new_method));
         }
-        
+
         {
             #[derive(Clone)]
             struct Wrapper<S: Clone>(S);
@@ -88,15 +94,13 @@ where
 
             let wrap = Wrapper(provider.clone());
             let method = ::copra::service::CodecMethodBundle::new(
-                ::copra::codec::ProtobufCodec::new(), wrap
+                ::copra::codec::ProtobufCodec::new(), 
+                wrap
             );
             let new_method = ::copra::service::NewUnifiedMethod::new(method);
-            entries.push((
-                "is_prime".to_string(), 
-                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
-            ));
+            entries.push(("is_prime".to_string(), new_method));
         }
-        
+
         entries
     }
 }
@@ -112,22 +116,28 @@ where
 
 #[derive(Clone)]
 pub struct DemoStub<'a> {
-    greet_to_wrapper: ::copra::stub::RpcWrapper<'a,
-        ::copra::codec::ProtobufCodec<super::demo::GreetMessage, super::demo::GreetMessage>>,
+    greet_to_wrapper: ::copra::stub::RpcWrapper<
+        'a,
+        ::copra::codec::ProtobufCodec<super::demo::GreetMessage, super::demo::GreetMessage>,
+    >,
 
-    is_prime_wrapper: ::copra::stub::RpcWrapper<'a,
-        ::copra::codec::ProtobufCodec<super::demo::PrimeResponse, super::demo::PrimeRequest>>,
+    is_prime_wrapper: ::copra::stub::RpcWrapper<
+        'a,
+        ::copra::codec::ProtobufCodec<super::demo::PrimeResponse, super::demo::PrimeRequest>,
+    >,
 }
 
 impl<'a> DemoStub<'a> {
     pub fn new(channel: &'a ::copra::channel::Channel) -> Self {
         DemoStub {
             greet_to_wrapper: ::copra::stub::RpcWrapper::new(
-                ::copra::codec::ProtobufCodec::new(), channel
+                ::copra::codec::ProtobufCodec::new(),
+                channel
             ),
 
             is_prime_wrapper: ::copra::stub::RpcWrapper::new(
-                ::copra::codec::ProtobufCodec::new(), channel
+                ::copra::codec::ProtobufCodec::new(),
+                channel
             ),
         }
     }

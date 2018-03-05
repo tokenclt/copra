@@ -9,16 +9,24 @@ pub trait HelloService {
     type HelloGeneralFuture: ::futures::Future<
         Item = (super::http_hello::HelloResponse, ::copra::controller::Controller), 
         Error = ::copra::service::ProviderSetError,
-    > + 'static;
+    > 
+        + 'static;
 
     type HelloToFuture: ::futures::Future<
         Item = (super::http_hello::HelloResponse, ::copra::controller::Controller), 
         Error = ::copra::service::ProviderSetError,
-    > + 'static;
+    > 
+        + 'static;
 
-    fn hello_general(&self, msg: (super::http_hello::HelloRequest, ::copra::controller::Controller)) -> Self::HelloGeneralFuture;
+    fn hello_general(
+        &self, 
+        msg: (super::http_hello::HelloRequest, ::copra::controller::Controller)
+    ) -> Self::HelloGeneralFuture;
 
-    fn hello_to(&self, msg: (super::http_hello::HelloRequest, ::copra::controller::Controller)) -> Self::HelloToFuture;
+    fn hello_to(
+        &self, 
+        msg: (super::http_hello::HelloRequest, ::copra::controller::Controller)
+    ) -> Self::HelloToFuture;
 }
 
 pub struct HelloRegistrant<S> {
@@ -35,10 +43,10 @@ impl<S> ::copra::dispatcher::Registrant for HelloRegistrant<S>
 where
     S: HelloService + Clone + Send + Sync + 'static,
 {
-    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {
+    fn methods(&self) -> Vec<(String, ::copra::service::NewUnifiedMethod)> {
         let mut entries = Vec::new();
         let provider = &self.provider;
-    
+
         {
             #[derive(Clone)]
             struct Wrapper<S: Clone>(S);
@@ -59,15 +67,13 @@ where
 
             let wrap = Wrapper(provider.clone());
             let method = ::copra::service::CodecMethodBundle::new(
-                ::copra::codec::ProtobufCodec::new(), wrap
+                ::copra::codec::ProtobufCodec::new(), 
+                wrap
             );
             let new_method = ::copra::service::NewUnifiedMethod::new(method);
-            entries.push((
-                "hello_general".to_string(), 
-                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
-            ));
+            entries.push(("hello_general".to_string(), new_method));
         }
-        
+
         {
             #[derive(Clone)]
             struct Wrapper<S: Clone>(S);
@@ -88,15 +94,13 @@ where
 
             let wrap = Wrapper(provider.clone());
             let method = ::copra::service::CodecMethodBundle::new(
-                ::copra::codec::ProtobufCodec::new(), wrap
+                ::copra::codec::ProtobufCodec::new(), 
+                wrap
             );
             let new_method = ::copra::service::NewUnifiedMethod::new(method);
-            entries.push((
-                "hello_to".to_string(), 
-                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
-            ));
+            entries.push(("hello_to".to_string(), new_method));
         }
-        
+
         entries
     }
 }
@@ -112,22 +116,28 @@ where
 
 #[derive(Clone)]
 pub struct HelloStub<'a> {
-    hello_general_wrapper: ::copra::stub::RpcWrapper<'a,
-        ::copra::codec::ProtobufCodec<super::http_hello::HelloResponse, super::http_hello::HelloRequest>>,
+    hello_general_wrapper: ::copra::stub::RpcWrapper<
+        'a,
+        ::copra::codec::ProtobufCodec<super::http_hello::HelloResponse, super::http_hello::HelloRequest>,
+    >,
 
-    hello_to_wrapper: ::copra::stub::RpcWrapper<'a,
-        ::copra::codec::ProtobufCodec<super::http_hello::HelloResponse, super::http_hello::HelloRequest>>,
+    hello_to_wrapper: ::copra::stub::RpcWrapper<
+        'a,
+        ::copra::codec::ProtobufCodec<super::http_hello::HelloResponse, super::http_hello::HelloRequest>,
+    >,
 }
 
 impl<'a> HelloStub<'a> {
     pub fn new(channel: &'a ::copra::channel::Channel) -> Self {
         HelloStub {
             hello_general_wrapper: ::copra::stub::RpcWrapper::new(
-                ::copra::codec::ProtobufCodec::new(), channel
+                ::copra::codec::ProtobufCodec::new(),
+                channel
             ),
 
             hello_to_wrapper: ::copra::stub::RpcWrapper::new(
-                ::copra::codec::ProtobufCodec::new(), channel
+                ::copra::codec::ProtobufCodec::new(),
+                channel
             ),
         }
     }

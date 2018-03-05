@@ -4,8 +4,8 @@ fn generate_copra_internal_message() {
     protoc_rust_copra::run(protoc_rust_copra::Args {
         out_dir: "copra/src/message",
         input: &[
-            "copra/src/message/meta.proto",
-            "copra/src/message/test.proto",
+            "copra/protos/meta.proto",
+            "copra/protos/test.proto",
         ],
         includes: &[],
         rust_protobuf: true,

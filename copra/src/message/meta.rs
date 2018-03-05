@@ -809,15 +809,15 @@ impl ::protobuf::reflect::ProtobufValue for RpcResponseMeta {
 }
 
 static file_descriptor_proto_data: &'static [u8] = b"\
-    \n\x1ccopra/src/message/meta.proto\"\x89\x01\n\x07RpcMeta\x12)\n\x07requ\
-    est\x18\x01\x20\x01(\x0b2\x0f.RpcRequestMetaR\x07request\x12,\n\x08respo\
-    nse\x18\x02\x20\x01(\x0b2\x10.RpcResponseMetaR\x08response\x12%\n\x0ecor\
-    relation_id\x18\x04\x20\x01(\x04R\rcorrelationId\"k\n\x0eRpcRequestMeta\
-    \x12!\n\x0cservice_name\x18\x01\x20\x01(\tR\x0bserviceName\x12\x1f\n\x0b\
-    method_name\x18\x02\x20\x01(\tR\nmethodName\x12\x15\n\x06log_id\x18\x03\
-    \x20\x01(\x03R\x05logId\"O\n\x0fRpcResponseMeta\x12\x1d\n\nerror_code\
-    \x18\x01\x20\x01(\x05R\terrorCode\x12\x1d\n\nerror_text\x18\x02\x20\x01(\
-    \tR\terrorTextb\x06proto3\
+    \n\x17copra/protos/meta.proto\"\x89\x01\n\x07RpcMeta\x12)\n\x07request\
+    \x18\x01\x20\x01(\x0b2\x0f.RpcRequestMetaR\x07request\x12,\n\x08response\
+    \x18\x02\x20\x01(\x0b2\x10.RpcResponseMetaR\x08response\x12%\n\x0ecorrel\
+    ation_id\x18\x04\x20\x01(\x04R\rcorrelationId\"k\n\x0eRpcRequestMeta\x12\
+    !\n\x0cservice_name\x18\x01\x20\x01(\tR\x0bserviceName\x12\x1f\n\x0bmeth\
+    od_name\x18\x02\x20\x01(\tR\nmethodName\x12\x15\n\x06log_id\x18\x03\x20\
+    \x01(\x03R\x05logId\"O\n\x0fRpcResponseMeta\x12\x1d\n\nerror_code\x18\
+    \x01\x20\x01(\x05R\terrorCode\x12\x1d\n\nerror_text\x18\x02\x20\x01(\tR\
+    \terrorTextb\x06proto3\
 ";
 
 static mut file_descriptor_proto_lazy: ::protobuf::lazy::Lazy<::protobuf::descriptor::FileDescriptorProto> = ::protobuf::lazy::Lazy {

@@ -9,9 +9,13 @@ pub trait MetricService {
     type MetricFuture: ::futures::Future<
         Item = (super::benchmark::Empty, ::copra::controller::Controller), 
         Error = ::copra::service::ProviderSetError,
-    > + 'static;
+    > 
+        + 'static;
 
-    fn metric(&self, msg: (super::benchmark::Empty, ::copra::controller::Controller)) -> Self::MetricFuture;
+    fn metric(
+        &self, 
+        msg: (super::benchmark::Empty, ::copra::controller::Controller)
+    ) -> Self::MetricFuture;
 }
 
 pub struct MetricRegistrant<S> {
@@ -28,10 +32,10 @@ impl<S> ::copra::dispatcher::Registrant for MetricRegistrant<S>
 where
     S: MetricService + Clone + Send + Sync + 'static,
 {
-    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {
+    fn methods(&self) -> Vec<(String, ::copra::service::NewUnifiedMethod)> {
         let mut entries = Vec::new();
         let provider = &self.provider;
-    
+
         {
             #[derive(Clone)]
             struct Wrapper<S: Clone>(S);
@@ -52,15 +56,13 @@ where
 
             let wrap = Wrapper(provider.clone());
             let method = ::copra::service::CodecMethodBundle::new(
-                ::copra::codec::ProtobufCodec::new(), wrap
+                ::copra::codec::ProtobufCodec::new(), 
+                wrap
             );
             let new_method = ::copra::service::NewUnifiedMethod::new(method);
-            entries.push((
-                "metric".to_string(), 
-                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
-            ));
+            entries.push(("metric".to_string(), new_method));
         }
-        
+
         entries
     }
 }
@@ -76,15 +78,18 @@ where
 
 #[derive(Clone)]
 pub struct MetricStub<'a> {
-    metric_wrapper: ::copra::stub::RpcWrapper<'a,
-        ::copra::codec::ProtobufCodec<super::benchmark::Empty, super::benchmark::Empty>>,
+    metric_wrapper: ::copra::stub::RpcWrapper<
+        'a,
+        ::copra::codec::ProtobufCodec<super::benchmark::Empty, super::benchmark::Empty>,
+    >,
 }
 
 impl<'a> MetricStub<'a> {
     pub fn new(channel: &'a ::copra::channel::Channel) -> Self {
         MetricStub {
             metric_wrapper: ::copra::stub::RpcWrapper::new(
-                ::copra::codec::ProtobufCodec::new(), channel
+                ::copra::codec::ProtobufCodec::new(),
+                channel
             ),
         }
     }
@@ -107,16 +112,24 @@ pub trait PressureService {
     type EchoFuture: ::futures::Future<
         Item = (super::benchmark::StringMessage, ::copra::controller::Controller), 
         Error = ::copra::service::ProviderSetError,
-    > + 'static;
+    > 
+        + 'static;
 
     type ProcessFuture: ::futures::Future<
         Item = (super::benchmark::Empty, ::copra::controller::Controller), 
         Error = ::copra::service::ProviderSetError,
-    > + 'static;
+    > 
+        + 'static;
 
-    fn echo(&self, msg: (super::benchmark::StringMessage, ::copra::controller::Controller)) -> Self::EchoFuture;
+    fn echo(
+        &self, 
+        msg: (super::benchmark::StringMessage, ::copra::controller::Controller)
+    ) -> Self::EchoFuture;
 
-    fn process(&self, msg: (super::benchmark::PressureRequest, ::copra::controller::Controller)) -> Self::ProcessFuture;
+    fn process(
+        &self, 
+        msg: (super::benchmark::PressureRequest, ::copra::controller::Controller)
+    ) -> Self::ProcessFuture;
 }
 
 pub struct PressureRegistrant<S> {
@@ -133,10 +146,10 @@ impl<S> ::copra::dispatcher::Registrant for PressureRegistrant<S>
 where
     S: PressureService + Clone + Send + Sync + 'static,
 {
-    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {
+    fn methods(&self) -> Vec<(String, ::copra::service::NewUnifiedMethod)> {
         let mut entries = Vec::new();
         let provider = &self.provider;
-    
+
         {
             #[derive(Clone)]
             struct Wrapper<S: Clone>(S);
@@ -157,15 +170,13 @@ where
 
             let wrap = Wrapper(provider.clone());
             let method = ::copra::service::CodecMethodBundle::new(
-                ::copra::codec::ProtobufCodec::new(), wrap
+                ::copra::codec::ProtobufCodec::new(), 
+                wrap
             );
             let new_method = ::copra::service::NewUnifiedMethod::new(method);
-            entries.push((
-                "echo".to_string(), 
-                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
-            ));
+            entries.push(("echo".to_string(), new_method));
         }
-        
+
         {
             #[derive(Clone)]
             struct Wrapper<S: Clone>(S);
@@ -186,15 +197,13 @@ where
 
             let wrap = Wrapper(provider.clone());
             let method = ::copra::service::CodecMethodBundle::new(
-                ::copra::codec::ProtobufCodec::new(), wrap
+                ::copra::codec::ProtobufCodec::new(), 
+                wrap
             );
             let new_method = ::copra::service::NewUnifiedMethod::new(method);
-            entries.push((
-                "process".to_string(), 
-                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
-            ));
+            entries.push(("process".to_string(), new_method));
         }
-        
+
         entries
     }
 }
@@ -210,22 +219,28 @@ where
 
 #[derive(Clone)]
 pub struct PressureStub<'a> {
-    echo_wrapper: ::copra::stub::RpcWrapper<'a,
-        ::copra::codec::ProtobufCodec<super::benchmark::StringMessage, super::benchmark::StringMessage>>,
+    echo_wrapper: ::copra::stub::RpcWrapper<
+        'a,
+        ::copra::codec::ProtobufCodec<super::benchmark::StringMessage, super::benchmark::StringMessage>,
+    >,
 
-    process_wrapper: ::copra::stub::RpcWrapper<'a,
-        ::copra::codec::ProtobufCodec<super::benchmark::Empty, super::benchmark::PressureRequest>>,
+    process_wrapper: ::copra::stub::RpcWrapper<
+        'a,
+        ::copra::codec::ProtobufCodec<super::benchmark::Empty, super::benchmark::PressureRequest>,
+    >,
 }
 
 impl<'a> PressureStub<'a> {
     pub fn new(channel: &'a ::copra::channel::Channel) -> Self {
         PressureStub {
             echo_wrapper: ::copra::stub::RpcWrapper::new(
-                ::copra::codec::ProtobufCodec::new(), channel
+                ::copra::codec::ProtobufCodec::new(),
+                channel
             ),
 
             process_wrapper: ::copra::stub::RpcWrapper::new(
-                ::copra::codec::ProtobufCodec::new(), channel
+                ::copra::codec::ProtobufCodec::new(),
+                channel
             ),
         }
     }

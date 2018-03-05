@@ -9,7 +9,7 @@ use tokio_service::NewService;
 
 use controller::Controller;
 use codec::MethodCodec;
-use dispatcher::{ServiceRegistry};
+use dispatcher::ServiceRegistry;
 use message::{RequestPackage, ResponsePackage, RpcResponseMeta};
 
 pub use tokio_service::Service;
@@ -19,31 +19,16 @@ mod error;
 
 type Bundle = (Bytes, Controller);
 
-pub(crate) type MetaServiceFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
-
-/// A future that will resolve to a serialized message
-pub type MethodFuture = Box<Future<Item = Bundle, Error = RequestProcessError>>;
-
-/// Type alias of `Service` trait object
-///
-/// This type is used internally by auto-generated stubs.
-#[doc(hidden)]
-pub type BoxedUnifiedMethod = Box<
+type BoxedUnifiedMethod = Box<
     Service<
         Request = Bundle,
         Response = Bundle,
         Error = RequestProcessError,
         Future = MethodFuture,
-    >
-        + Send
-        + Sync,
+    >,
 >;
 
-/// Type alias of `NewService` trait object
-///
-/// This type is used internally by auto-generated stubs.
-#[doc(hidden)]
-pub type BoxedNewUnifiedMethod = Box<
+type BoxedNewUnifiedMethod = Box<
     NewService<
         Request = Bundle,
         Response = Bundle,
@@ -53,6 +38,11 @@ pub type BoxedNewUnifiedMethod = Box<
         + Send
         + Sync,
 >;
+
+pub(crate) type MetaServiceFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
+
+/// A future that will resolve to a serialized message
+pub type MethodFuture = Box<Future<Item = Bundle, Error = RequestProcessError>>;
 
 #[derive(Clone, Debug)]
 pub(crate) struct MetaService {
@@ -123,72 +113,89 @@ impl NewService for MetaService {
     }
 }
 
-/// A factory struct that can produce encapsulated service.
+/// An unified, typeless wrapper around an RPC method.
 ///
-/// An encapsulated service consists of the method codec and the user-defined
-/// processing logic.
-pub struct NewUnifiedMethod<S: Send + Sync> {
-    inner: Box<
-        NewService<Request = Bundle, Response = Bundle, Error = RequestProcessError, Instance = S>
-            + Send
-            + Sync,
-    >,
+/// It is used internally by auto-generated stubs.
+pub struct UnifiedMethod {
+    inner: BoxedUnifiedMethod,
 }
 
-impl<S> fmt::Debug for NewUnifiedMethod<S>
-where
-    S: Send + Sync,
-{
+impl fmt::Debug for UnifiedMethod {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "NewEncapsulatedMethod")
+        f.debug_struct("UnifiedMethod").finish()
     }
 }
 
-impl<S> NewUnifiedMethod<S>
-where
-    S: NewService<Request = Bundle, Response = Bundle, Error = RequestProcessError, Instance = S>,
-    S: Service<
-        Request = Bundle,
-        Response = Bundle,
-        Error = RequestProcessError,
-        Future = MethodFuture,
-    >,
-    S: 'static + Send + Sync,
-{
+impl UnifiedMethod {
     /// Create a new instance by boxing.
-    pub fn new(method: S) -> Self {
+    pub fn new(inner: BoxedUnifiedMethod) -> Self {
+        UnifiedMethod { inner }
+    }
+}
+
+impl Service for UnifiedMethod {
+    type Request = Bundle;
+    type Response = Bundle;
+    type Error = RequestProcessError;
+    type Future = MethodFuture;
+
+    fn call(&self, req: Self::Request) -> Self::Future {
+        self.inner.call(req)
+    }
+}
+
+// TODO: hyperlink `UnifiedMethod`
+/// A factory struct that can produce encapsulated service.
+///
+/// This struct is stored in the dispatcher to create new
+/// [`UnifiedMethod`] for each incoming request.
+/// 
+/// [`UnifiedMethod`]: struct.UnifiedMethod.html
+pub struct NewUnifiedMethod {
+    inner: BoxedNewUnifiedMethod,
+}
+
+impl NewUnifiedMethod {
+    /// Create a new instance
+    ///
+    /// This method is used by the code generator.
+    pub fn new<S>(new: S) -> Self
+    where
+        S: NewService<
+            Request = Bundle,
+            Response = Bundle,
+            Error = RequestProcessError,
+            Instance = BoxedUnifiedMethod,
+        >,
+        S: Send + Sync + 'static,
+    {
         NewUnifiedMethod {
-            inner: Box::new(method),
+            inner: Box::new(new),
         }
     }
 }
 
-impl<S> NewService for NewUnifiedMethod<S>
-where
-    S: NewService<Request = Bundle, Response = Bundle, Error = RequestProcessError, Instance = S>,
-    S: Service<
-        Request = Bundle,
-        Response = Bundle,
-        Error = RequestProcessError,
-        Future = MethodFuture,
-    >,
-    S: 'static + Send + Sync,
-{
+impl NewService for NewUnifiedMethod {
     type Request = Bundle;
     type Response = Bundle;
     type Error = RequestProcessError;
-    type Instance = BoxedUnifiedMethod;
+    type Instance = UnifiedMethod;
 
     fn new_service(&self) -> io::Result<Self::Instance> {
-        self.inner
-            .new_service()
-            .map(|s| Box::new(s) as BoxedUnifiedMethod)
+        Ok(UnifiedMethod::new(self.inner.new_service()?))
+    }
+}
+
+impl fmt::Debug for NewUnifiedMethod {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("NewUnifiedMethod").finish()
     }
 }
 
 /// A bunble of a codec and a user-defined service
 ///
-/// This struct is used to provide a unified interface for the request dispatcher.
+/// An encapsulated service consists of the method codec and the user-defined
+/// processing logic.
 #[allow(missing_debug_implementations)]
 pub struct CodecMethodBundle<C, S> {
     codec: C,
@@ -256,12 +263,31 @@ where
     type Request = Bundle;
     type Response = Bundle;
     type Error = RequestProcessError;
-    type Instance = Self;
+    type Instance = BoxedUnifiedMethod;
 
     fn new_service(&self) -> io::Result<Self::Instance> {
-        Ok(CodecMethodBundle {
+        let n = CodecMethodBundle {
             codec: self.codec.clone(),
             method: self.method.clone(),
-        })
+        };
+        Ok(Box::new(n))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assert_send<T: Send>() {}
+    fn assert_sync<T: Sync>() {}
+
+    #[test]
+    fn test_send() {
+        assert_send::<MetaService>();
+    }
+
+    #[test]
+    fn test_sync() {
+        assert_sync::<MetaService>();
     }
 }
