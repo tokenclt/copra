@@ -8,12 +8,12 @@
 pub trait DemoService {
     type GreetToFuture: ::futures::Future<
         Item = (super::demo::GreetMessage, ::copra::controller::Controller), 
-        Error = ::copra::service::MethodError,
+        Error = ::copra::service::ProviderSetError,
     > + 'static;
 
     type IsPrimeFuture: ::futures::Future<
         Item = (super::demo::PrimeResponse, ::copra::controller::Controller), 
-        Error = ::copra::service::MethodError,
+        Error = ::copra::service::ProviderSetError,
     > + 'static;
 
     fn greet_to(&self, msg: (super::demo::GreetMessage, ::copra::controller::Controller)) -> Self::GreetToFuture;
@@ -35,7 +35,7 @@ impl<S> ::copra::dispatcher::Registrant for DemoRegistrant<S>
 where
     S: DemoService + Clone + Send + Sync + 'static,
 {
-    fn methods(&self) -> Vec<(String, ::copra::service::NewEncapService)> {
+    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {
         let mut entries = Vec::new();
         let provider = &self.provider;
     
@@ -49,7 +49,7 @@ where
             {
                 type Request = (super::demo::GreetMessage, ::copra::controller::Controller);
                 type Response = (super::demo::GreetMessage, ::copra::controller::Controller);
-                type Error = ::copra::service::MethodError;
+                type Error = ::copra::service::ProviderSetError;
                 type Future = <S as DemoService>::GreetToFuture;
 
                 fn call(&self, req: Self::Request) -> Self::Future {
@@ -58,13 +58,13 @@ where
             }
 
             let wrap = Wrapper(provider.clone());
-            let method = ::copra::service::EncapsulatedMethod::new(
+            let method = ::copra::service::CodecMethodBundle::new(
                 ::copra::codec::ProtobufCodec::new(), wrap
             );
-            let new_method = ::copra::service::NewEncapsulatedMethod::new(method);
+            let new_method = ::copra::service::NewUnifiedMethod::new(method);
             entries.push((
                 "greet_to".to_string(), 
-                Box::new(new_method) as ::copra::service::NewEncapService,
+                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
             ));
         }
         
@@ -78,7 +78,7 @@ where
             {
                 type Request = (super::demo::PrimeRequest, ::copra::controller::Controller);
                 type Response = (super::demo::PrimeResponse, ::copra::controller::Controller);
-                type Error = ::copra::service::MethodError;
+                type Error = ::copra::service::ProviderSetError;
                 type Future = <S as DemoService>::IsPrimeFuture;
 
                 fn call(&self, req: Self::Request) -> Self::Future {
@@ -87,13 +87,13 @@ where
             }
 
             let wrap = Wrapper(provider.clone());
-            let method = ::copra::service::EncapsulatedMethod::new(
+            let method = ::copra::service::CodecMethodBundle::new(
                 ::copra::codec::ProtobufCodec::new(), wrap
             );
-            let new_method = ::copra::service::NewEncapsulatedMethod::new(method);
+            let new_method = ::copra::service::NewUnifiedMethod::new(method);
             entries.push((
                 "is_prime".to_string(), 
-                Box::new(new_method) as ::copra::service::NewEncapService,
+                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
             ));
         }
         

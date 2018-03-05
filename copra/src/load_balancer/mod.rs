@@ -5,7 +5,7 @@ use tokio_proto::multiplex::ClientService;
 use tokio_service::Service;
 
 use channel::MetaClientProtocol;
-use service::MethodError;
+use stub::RpcErrorKind;
 
 pub mod single_server;
 
@@ -40,14 +40,14 @@ impl Service for ServerEndPort {
 #[derive(Clone, Debug, Default)]
 pub struct CallInfo {
     /// If any error raised when processing a request
-    pub error: Option<MethodError>,
+    pub error: Option<RpcErrorKind>,
     /// When the request started
     pub start_usec: u64,
 }
 
 impl CallInfo {
     /// Create a new instance.
-    pub fn new(start_usec: u64, error: Option<MethodError>) -> Self {
+    pub fn new(start_usec: u64, error: Option<RpcErrorKind>) -> Self {
         CallInfo { start_usec, error }
     }
 }

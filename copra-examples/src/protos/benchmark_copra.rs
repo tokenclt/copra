@@ -8,7 +8,7 @@
 pub trait MetricService {
     type MetricFuture: ::futures::Future<
         Item = (super::benchmark::Empty, ::copra::controller::Controller), 
-        Error = ::copra::service::MethodError,
+        Error = ::copra::service::ProviderSetError,
     > + 'static;
 
     fn metric(&self, msg: (super::benchmark::Empty, ::copra::controller::Controller)) -> Self::MetricFuture;
@@ -28,7 +28,7 @@ impl<S> ::copra::dispatcher::Registrant for MetricRegistrant<S>
 where
     S: MetricService + Clone + Send + Sync + 'static,
 {
-    fn methods(&self) -> Vec<(String, ::copra::service::NewEncapService)> {
+    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {
         let mut entries = Vec::new();
         let provider = &self.provider;
     
@@ -42,7 +42,7 @@ where
             {
                 type Request = (super::benchmark::Empty, ::copra::controller::Controller);
                 type Response = (super::benchmark::Empty, ::copra::controller::Controller);
-                type Error = ::copra::service::MethodError;
+                type Error = ::copra::service::ProviderSetError;
                 type Future = <S as MetricService>::MetricFuture;
 
                 fn call(&self, req: Self::Request) -> Self::Future {
@@ -51,13 +51,13 @@ where
             }
 
             let wrap = Wrapper(provider.clone());
-            let method = ::copra::service::EncapsulatedMethod::new(
+            let method = ::copra::service::CodecMethodBundle::new(
                 ::copra::codec::ProtobufCodec::new(), wrap
             );
-            let new_method = ::copra::service::NewEncapsulatedMethod::new(method);
+            let new_method = ::copra::service::NewUnifiedMethod::new(method);
             entries.push((
                 "metric".to_string(), 
-                Box::new(new_method) as ::copra::service::NewEncapService,
+                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
             ));
         }
         
@@ -106,12 +106,12 @@ impl<'a> MetricStub<'a> {
 pub trait PressureService {
     type EchoFuture: ::futures::Future<
         Item = (super::benchmark::StringMessage, ::copra::controller::Controller), 
-        Error = ::copra::service::MethodError,
+        Error = ::copra::service::ProviderSetError,
     > + 'static;
 
     type ProcessFuture: ::futures::Future<
         Item = (super::benchmark::Empty, ::copra::controller::Controller), 
-        Error = ::copra::service::MethodError,
+        Error = ::copra::service::ProviderSetError,
     > + 'static;
 
     fn echo(&self, msg: (super::benchmark::StringMessage, ::copra::controller::Controller)) -> Self::EchoFuture;
@@ -133,7 +133,7 @@ impl<S> ::copra::dispatcher::Registrant for PressureRegistrant<S>
 where
     S: PressureService + Clone + Send + Sync + 'static,
 {
-    fn methods(&self) -> Vec<(String, ::copra::service::NewEncapService)> {
+    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {
         let mut entries = Vec::new();
         let provider = &self.provider;
     
@@ -147,7 +147,7 @@ where
             {
                 type Request = (super::benchmark::StringMessage, ::copra::controller::Controller);
                 type Response = (super::benchmark::StringMessage, ::copra::controller::Controller);
-                type Error = ::copra::service::MethodError;
+                type Error = ::copra::service::ProviderSetError;
                 type Future = <S as PressureService>::EchoFuture;
 
                 fn call(&self, req: Self::Request) -> Self::Future {
@@ -156,13 +156,13 @@ where
             }
 
             let wrap = Wrapper(provider.clone());
-            let method = ::copra::service::EncapsulatedMethod::new(
+            let method = ::copra::service::CodecMethodBundle::new(
                 ::copra::codec::ProtobufCodec::new(), wrap
             );
-            let new_method = ::copra::service::NewEncapsulatedMethod::new(method);
+            let new_method = ::copra::service::NewUnifiedMethod::new(method);
             entries.push((
                 "echo".to_string(), 
-                Box::new(new_method) as ::copra::service::NewEncapService,
+                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
             ));
         }
         
@@ -176,7 +176,7 @@ where
             {
                 type Request = (super::benchmark::PressureRequest, ::copra::controller::Controller);
                 type Response = (super::benchmark::Empty, ::copra::controller::Controller);
-                type Error = ::copra::service::MethodError;
+                type Error = ::copra::service::ProviderSetError;
                 type Future = <S as PressureService>::ProcessFuture;
 
                 fn call(&self, req: Self::Request) -> Self::Future {
@@ -185,13 +185,13 @@ where
             }
 
             let wrap = Wrapper(provider.clone());
-            let method = ::copra::service::EncapsulatedMethod::new(
+            let method = ::copra::service::CodecMethodBundle::new(
                 ::copra::codec::ProtobufCodec::new(), wrap
             );
-            let new_method = ::copra::service::NewEncapsulatedMethod::new(method);
+            let new_method = ::copra::service::NewUnifiedMethod::new(method);
             entries.push((
                 "process".to_string(), 
-                Box::new(new_method) as ::copra::service::NewEncapService,
+                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
             ));
         }
         

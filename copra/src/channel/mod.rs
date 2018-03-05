@@ -55,6 +55,7 @@ pub(crate) mod connector;
 /// when the channel is ready for use.
 pub type ChannelBuildFuture = Box<Future<Item = Channel, Error = ChannelBuildError>>;
 
+// FIXME: name conflicts with message::*
 // TODO: make this fully public
 // TODO: move this to a better place
 pub(crate) type RequestPackage = (RpcRequestMeta, Bytes);

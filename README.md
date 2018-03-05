@@ -2,6 +2,7 @@ RPC framework in Rust
 
 [![Build Status](https://travis-ci.org/AprliRainkun/copra.svg?branch=master)](https://travis-ci.org/AprliRainkun/copra)
 [![Crates.io](https://img.shields.io/crates/v/copra.svg)](https://crates.io/crates/copra)
+[![Docs.rs](https://docs.rs/copra/badge.svg)](https://docs.rs/copra)
 
 `copra` is an [RPC] framework aimed at ease of use and configuration.
 It can generate most of the boilerplate code in server and client side.

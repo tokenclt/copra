@@ -4,7 +4,7 @@ extern crate env_logger;
 extern crate futures;
 extern crate tokio_core;
 
-use copra::{ChannelBuilder, Controller, MethodError, ServerBuilder, ServiceRegistry};
+use copra::{ChannelBuilder, Controller, ProviderSetError, ServerBuilder, ServiceRegistry};
 use futures::{Future, IntoFuture};
 use std::thread;
 use tokio_core::reactor::Core;
@@ -18,9 +18,9 @@ use copra_examples::protos::echo_copra::{EchoRegistrant, EchoService, EchoStub};
 struct Echo;
 
 impl EchoService for Echo {
-    type EchoFuture = Box<Future<Item = (EchoResponse, Controller), Error = MethodError>>;
+    type EchoFuture = Box<Future<Item = (EchoResponse, Controller), Error = ProviderSetError>>;
 
-    type RevEchoFuture = Box<Future<Item = (EchoResponse, Controller), Error = MethodError>>;
+    type RevEchoFuture = Box<Future<Item = (EchoResponse, Controller), Error = ProviderSetError>>;
 
     fn echo(&self, msg: (EchoRequest, Controller)) -> Self::EchoFuture {
         let (msg, controller) = msg;

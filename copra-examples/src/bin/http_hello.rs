@@ -4,7 +4,7 @@ extern crate env_logger;
 extern crate futures;
 extern crate tokio_core;
 
-use copra::{Controller, MethodError, ServerBuilder, ServiceRegistry};
+use copra::{Controller, ProviderSetError, ServerBuilder, ServiceRegistry};
 use copra::protocol::http::HttpStatus;
 use futures::future::{self, FutureResult};
 use std::mem::replace;
@@ -16,9 +16,9 @@ use copra_examples::protos::http_hello_copra::{HelloRegistrant, HelloService};
 struct Hello;
 
 impl HelloService for Hello {
-    type HelloGeneralFuture = FutureResult<(HelloResponse, Controller), MethodError>;
+    type HelloGeneralFuture = FutureResult<(HelloResponse, Controller), ProviderSetError>;
 
-    type HelloToFuture = FutureResult<(HelloResponse, Controller), MethodError>;
+    type HelloToFuture = FutureResult<(HelloResponse, Controller), ProviderSetError>;
 
     fn hello_general(
         &self,
@@ -45,7 +45,7 @@ impl HelloService for Hello {
 
                 future::ok((HelloResponse::new(), controller))
             }
-            Err(_) => future::err(MethodError::UnknownError),
+            Err(_) => future::err(ProviderSetError::InvalidRequest),
         }
     }
 }

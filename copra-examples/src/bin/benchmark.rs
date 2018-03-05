@@ -5,7 +5,7 @@ extern crate env_logger;
 extern crate futures;
 extern crate tokio_core;
 
-use copra::{ChannelBuilder, Controller, MethodError, ServerBuilder, ServiceRegistry};
+use copra::{ChannelBuilder, Controller, ProviderSetError, ServerBuilder, ServiceRegistry};
 use copra::codec::ProtobufCodec;
 use copra::channel::Channel;
 use copra::stub::StubFuture;
@@ -26,9 +26,9 @@ use tokio_core::reactor::Core;
 struct Pressure;
 
 impl PressureService for Pressure {
-    type EchoFuture = FutureResult<(StringMessage, Controller), MethodError>;
+    type EchoFuture = FutureResult<(StringMessage, Controller), ProviderSetError>;
 
-    type ProcessFuture = FutureResult<(Empty, Controller), MethodError>;
+    type ProcessFuture = FutureResult<(Empty, Controller), ProviderSetError>;
 
     fn echo(&self, msg: (StringMessage, Controller)) -> Self::EchoFuture {
         let (msg, controller) = msg;
@@ -55,7 +55,7 @@ impl Metric {
 }
 
 impl MetricService for Metric {
-    type MetricFuture = FutureResult<(Empty, Controller), MethodError>;
+    type MetricFuture = FutureResult<(Empty, Controller), ProviderSetError>;
 
     fn metric(&self, msg: (Empty, Controller)) -> Self::MetricFuture {
         let (empty, mut controller) = msg;

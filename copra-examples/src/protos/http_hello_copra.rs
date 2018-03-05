@@ -8,12 +8,12 @@
 pub trait HelloService {
     type HelloGeneralFuture: ::futures::Future<
         Item = (super::http_hello::HelloResponse, ::copra::controller::Controller), 
-        Error = ::copra::service::MethodError,
+        Error = ::copra::service::ProviderSetError,
     > + 'static;
 
     type HelloToFuture: ::futures::Future<
         Item = (super::http_hello::HelloResponse, ::copra::controller::Controller), 
-        Error = ::copra::service::MethodError,
+        Error = ::copra::service::ProviderSetError,
     > + 'static;
 
     fn hello_general(&self, msg: (super::http_hello::HelloRequest, ::copra::controller::Controller)) -> Self::HelloGeneralFuture;
@@ -35,7 +35,7 @@ impl<S> ::copra::dispatcher::Registrant for HelloRegistrant<S>
 where
     S: HelloService + Clone + Send + Sync + 'static,
 {
-    fn methods(&self) -> Vec<(String, ::copra::service::NewEncapService)> {
+    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {
         let mut entries = Vec::new();
         let provider = &self.provider;
     
@@ -49,7 +49,7 @@ where
             {
                 type Request = (super::http_hello::HelloRequest, ::copra::controller::Controller);
                 type Response = (super::http_hello::HelloResponse, ::copra::controller::Controller);
-                type Error = ::copra::service::MethodError;
+                type Error = ::copra::service::ProviderSetError;
                 type Future = <S as HelloService>::HelloGeneralFuture;
 
                 fn call(&self, req: Self::Request) -> Self::Future {
@@ -58,13 +58,13 @@ where
             }
 
             let wrap = Wrapper(provider.clone());
-            let method = ::copra::service::EncapsulatedMethod::new(
+            let method = ::copra::service::CodecMethodBundle::new(
                 ::copra::codec::ProtobufCodec::new(), wrap
             );
-            let new_method = ::copra::service::NewEncapsulatedMethod::new(method);
+            let new_method = ::copra::service::NewUnifiedMethod::new(method);
             entries.push((
                 "hello_general".to_string(), 
-                Box::new(new_method) as ::copra::service::NewEncapService,
+                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
             ));
         }
         
@@ -78,7 +78,7 @@ where
             {
                 type Request = (super::http_hello::HelloRequest, ::copra::controller::Controller);
                 type Response = (super::http_hello::HelloResponse, ::copra::controller::Controller);
-                type Error = ::copra::service::MethodError;
+                type Error = ::copra::service::ProviderSetError;
                 type Future = <S as HelloService>::HelloToFuture;
 
                 fn call(&self, req: Self::Request) -> Self::Future {
@@ -87,13 +87,13 @@ where
             }
 
             let wrap = Wrapper(provider.clone());
-            let method = ::copra::service::EncapsulatedMethod::new(
+            let method = ::copra::service::CodecMethodBundle::new(
                 ::copra::codec::ProtobufCodec::new(), wrap
             );
-            let new_method = ::copra::service::NewEncapsulatedMethod::new(method);
+            let new_method = ::copra::service::NewUnifiedMethod::new(method);
             entries.push((
                 "hello_to".to_string(), 
-                Box::new(new_method) as ::copra::service::NewEncapService,
+                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
             ));
         }
         

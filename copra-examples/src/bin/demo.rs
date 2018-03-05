@@ -8,7 +8,7 @@ extern crate rand;
 extern crate tokio_core;
 extern crate tokio_timer;
 
-use copra::{ChannelBuilder, Controller, MethodError, ServerBuilder, ServiceRegistry};
+use copra::{ChannelBuilder, Controller, ProviderSetError, ServerBuilder, ServiceRegistry};
 use futures::future::{self, Future, FutureResult};
 use futures_cpupool::CpuPool;
 use primal::is_prime;
@@ -34,9 +34,9 @@ impl Demo {
 }
 
 impl DemoService for Demo {
-    type GreetToFuture = FutureResult<(GreetMessage, Controller), MethodError>;
+    type GreetToFuture = FutureResult<(GreetMessage, Controller), ProviderSetError>;
 
-    type IsPrimeFuture = Box<Future<Item = (PrimeResponse, Controller), Error = MethodError>>;
+    type IsPrimeFuture = Box<Future<Item = (PrimeResponse, Controller), Error = ProviderSetError>>;
 
     fn greet_to(&self, msg: (GreetMessage, Controller)) -> Self::GreetToFuture {
         let (msg, controller) = msg;

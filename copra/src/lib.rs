@@ -160,10 +160,10 @@
 //! ```
 //!
 //! [build-scripts]: https://doc.rust-lang.org/cargo/reference/build-scripts.html
-//! 
+//!
 //! # Note
-//! 
-//! This project is still in the early development stage. It basically works, but 
+//!
+//! This project is still in the early development stage. It basically works, but
 //! you should use it with caution.
 
 #![warn(missing_docs, missing_debug_implementations)]
@@ -189,8 +189,9 @@ extern crate rand;
 pub use channel::ChannelBuilder;
 pub use controller::Controller;
 pub use dispatcher::ServiceRegistry;
+pub use stub::{RpcError, RpcErrorKind};
 pub use server::ServerBuilder;
-pub use service::MethodError;
+pub use service::ProviderSetError;
 
 pub mod channel;
 pub mod controller;

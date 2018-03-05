@@ -24,7 +24,7 @@ pub fn generate_service_trait(
                 r"
     type {}: ::futures::Future<
         Item = ({}, ::copra::controller::Controller), 
-        Error = ::copra::service::MethodError,
+        Error = ::copra::service::ProviderSetError,
     > + 'static;
 ",
                 future, resp
@@ -94,7 +94,7 @@ impl<S> ::copra::dispatcher::Registrant for {}<S>
 where
     S: {} + Clone + Send + Sync + 'static,
 {{
-    fn methods(&self) -> Vec<(String, ::copra::service::NewEncapService)> {{
+    fn methods(&self) -> Vec<(String, ::copra::service::BoxedNewUnifiedMethod)> {{
         let mut entries = Vec::new();
         let provider = &self.provider;
     ",
@@ -120,7 +120,7 @@ where
             {{
                 type Request = ({}, ::copra::controller::Controller);
                 type Response = ({}, ::copra::controller::Controller);
-                type Error = ::copra::service::MethodError;
+                type Error = ::copra::service::ProviderSetError;
                 type Future = <S as {}>::{};
 
                 fn call(&self, req: Self::Request) -> Self::Future {{
@@ -129,13 +129,13 @@ where
             }}
 
             let wrap = Wrapper(provider.clone());
-            let method = ::copra::service::EncapsulatedMethod::new(
+            let method = ::copra::service::CodecMethodBundle::new(
                 ::copra::codec::ProtobufCodec::new(), wrap
             );
-            let new_method = ::copra::service::NewEncapsulatedMethod::new(method);
+            let new_method = ::copra::service::NewUnifiedMethod::new(method);
             entries.push((
                 "{}".to_string(), 
-                Box::new(new_method) as ::copra::service::NewEncapService,
+                Box::new(new_method) as ::copra::service::BoxedNewUnifiedMethod,
             ));
         }}
         "#,

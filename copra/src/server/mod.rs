@@ -22,28 +22,22 @@
 //! # }
 //! ```
 
-use bytes::Bytes;
 use tokio_core::reactor::Remote;
 use tokio_proto::TcpServer;
 use tokio_proto::multiplex::Multiplex;
-use tokio_service::{NewService, Service};
 use tokio_timer::Timer;
 use std::error::Error;
 use std::fmt;
-use std::io;
 use std::net::AddrParseError;
 use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
-use futures::{Future, IntoFuture, Stream};
+use futures::{Stream};
 use futures::future::Executor;
 
-use controller::Controller;
 use protocol::Protocol;
 use dispatcher::ServiceRegistry;
-use service::MethodError;
-use message::RpcResponseMeta;
-use message::{RequestPackage, ResponsePackage};
 use monitor::ThroughputMaintainer;
+use service::MetaService;
 
 use self::protocol::MetaServerProtocol;
 
@@ -51,60 +45,6 @@ mod connection;
 mod protocol;
 
 type Second = u64;
-
-type MetaServiceFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
-
-#[derive(Clone)]
-struct MetaService {
-    registry: Arc<ServiceRegistry>,
-}
-
-impl MetaService {
-    pub fn new(registry: Arc<ServiceRegistry>) -> Self {
-        MetaService { registry }
-    }
-}
-
-impl Service for MetaService {
-    type Request = RequestPackage;
-    type Response = ResponsePackage;
-    type Error = io::Error;
-    type Future = MetaServiceFuture;
-
-    fn call(&self, req: Self::Request) -> Self::Future {
-        let (meta, controller, body) = req;
-        let service = {
-            let service_name = meta.get_service_name();
-            let method_name = meta.get_method_name();
-            self.registry
-                .get_method(service_name, method_name)
-                .ok_or(MethodError::UnknownError)
-                .map_err(|e| {
-                    warn!(
-                        "Requested method {}::{} is not found",
-                        service_name, method_name
-                    );
-                    e
-                })
-                .into_future()
-        };
-        let response = service
-            .and_then(|service| service.call((body, controller)))
-            .then(|resp| result_to_errno(resp));
-        Box::new(response)
-    }
-}
-
-impl NewService for MetaService {
-    type Request = RequestPackage;
-    type Response = ResponsePackage;
-    type Error = io::Error;
-    type Instance = Self;
-
-    fn new_service(&self) -> io::Result<Self::Instance> {
-        Ok(self.clone())
-    }
-}
 
 /// Error raised when building a server
 #[derive(Clone, Debug)]
@@ -261,21 +201,4 @@ impl Server {
 
         self.listener.serve(MetaService::new(self.services.clone()))
     }
-}
-
-fn result_to_errno(
-    result: Result<(Bytes, Controller), MethodError>,
-) -> io::Result<ResponsePackage> {
-    result
-        .and_then(|(body, controller)| {
-            let mut meta = RpcResponseMeta::new();
-            meta.set_error_code(0);
-            Ok((meta, controller, body))
-        })
-        .or_else(|_| {
-            let mut meta = RpcResponseMeta::new();
-            meta.set_error_code(1);
-            meta.set_error_text("Unknown error".to_string());
-            Ok((meta, Controller::default(), Bytes::new()))
-        })
 }

@@ -82,21 +82,6 @@ pub struct ProtoCodec {
     tried_num: i32,
 }
 
-// impl fmt::Debug for ProtoCodec {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         let names = self.schemes
-//             .iter()
-//             .map(|proto| proto.name())
-//             .collect::<Vec<_>>();
-
-//         f.debug_struct("ProtoCodec")
-//             .field("schemes", &names)
-//             .field("cached_scheme", &self.cached_scheme)
-//             .field("tried_num", &self.tried_num)
-//             .finish()
-//     }
-// }
-
 impl ProtoCodec {
     /// Create a new codec that support multiple protocols.
     pub fn new(protos: &[Box<RpcProtocol>]) -> Self {
@@ -109,6 +94,17 @@ impl ProtoCodec {
         }
     }
 }
+
+// TODO: Should we handle the error case that the protocol header (e.g. prpc) is
+// broken ?
+// Option 1: Server shutdown the connection directly. Then client should (could)
+//     realize that the connection was closed by the server. This connection shutdown
+//     should be distinguished from a broken pipe (i.e. connection closed due to
+//     unstable network) to implement correct retry policy.
+// Option 2: Server shutdown the connection, and send a response message to state the
+//     error. Drawbacks: server may be unable to know the correlation id, thus can not
+//     make a targeted response. One work around is to add a special case to the
+//     protocol (may be we can refer to an established protocol, like http?).
 
 impl Decoder for ProtoCodec {
     type Item = (RequestId, RequestPackage);
