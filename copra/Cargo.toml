@@ -5,9 +5,10 @@ description = "A RPC framework (still in early development stage)"
 authors = ["Mingyu Zhou <zmy.2347@sjtu.edu.cn>"]
 license = "MIT/Apache-2.0"
 keywords = ["rpc", "network"]
+categories = ["Network programming"]
 documentation = "https://docs.rs/copra/0.1.0/copra/"
 homepage = "https://github.com/AprliRainkun/copra"
-categories = ["Network programming"]
+readme = "README.md"
 
 [badges]
 travis-ci = { repository = "AprliRainkun/copra" }
