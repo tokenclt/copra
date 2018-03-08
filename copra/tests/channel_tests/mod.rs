@@ -110,7 +110,6 @@ fn bad_body_message() {
 }
 
 #[test]
-#[ignore]
 fn bad_rpc_response_meta() {
     let addr = "127.0.0.1:9003";
     let mut core = Core::new().unwrap();

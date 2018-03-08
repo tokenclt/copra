@@ -39,8 +39,10 @@ type BoxedNewUnifiedMethod = Box<
         + Sync,
 >;
 
+// TODO: unbox this
 pub(crate) type MetaServiceFuture = Box<Future<Item = ResponsePackage, Error = io::Error>>;
 
+// TODO: unbox this
 /// A future that will resolve to a serialized message
 pub type MethodFuture = Box<Future<Item = Bundle, Error = RequestProcessError>>;
 
@@ -97,7 +99,6 @@ impl Service for MetaService {
                 Ok(pkg)
             });
 
-        // TODO: unbox this
         Box::new(resp)
     }
 }
@@ -149,7 +150,7 @@ impl Service for UnifiedMethod {
 ///
 /// This struct is stored in the dispatcher to create new
 /// [`UnifiedMethod`] for each incoming request.
-/// 
+///
 /// [`UnifiedMethod`]: struct.UnifiedMethod.html
 pub struct NewUnifiedMethod {
     inner: BoxedNewUnifiedMethod,

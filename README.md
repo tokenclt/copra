@@ -1,4 +1,4 @@
-RPC framework in Rust
+# RPC Framework in Rust
 
 [![Build Status](https://travis-ci.org/AprliRainkun/copra.svg?branch=master)](https://travis-ci.org/AprliRainkun/copra)
 [![Crates.io](https://img.shields.io/crates/v/copra.svg)](https://crates.io/crates/copra)

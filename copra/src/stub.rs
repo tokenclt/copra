@@ -1,11 +1,13 @@
 //! Types that help to generate RPC stubs
 
 use futures::{Async, Future, Poll};
+use std::error::Error;
+use std::fmt;
 
 use codec::MethodCodec;
-use channel::{Channel, ChannelFuture, ChannelError};
+use channel::{Channel, ChannelError, ChannelFuture};
 use load_balancer::CallInfo;
-use message::{RpcRequestMeta};
+use message::RpcRequestMeta;
 
 /// The error type for an RPC request
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -34,6 +36,18 @@ impl RpcError {
 impl From<ChannelError> for RpcError {
     fn from(_e: ChannelError) -> Self {
         unimplemented!()
+    }
+}
+
+impl fmt::Display for RpcError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Rpc error kind: {}, message: {}", self.kind, self.text)
+    }
+}
+
+impl Error for RpcError {
+    fn description(&self) -> &str {
+        "RPC error"
     }
 }
 
@@ -85,6 +99,25 @@ impl RpcErrorKind {
     /// Create error kind from error code
     pub fn from_error_code(_code: i32) -> Self {
         unimplemented!()
+    }
+}
+
+impl fmt::Display for RpcErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use RpcErrorKind::*;
+        match *self {
+            InvalidRequest => write!(f, "invalid request"),
+            InteralServerError => write!(f, "internal server error"),
+            ServerNotFound => write!(f, "can not find server at the given address"),
+            ServiceNotFound => write!(f, "can not find the service"),
+            MethodNotFound => write!(f, "can not find the method"),
+            RequestEncodeError => write!(f, "request encode error"),
+            ResponseDecodeError => write!(f, "response decode error"),
+            ServerOvercrowded => write!(f, "the server is overcrowded"),
+            TimeOut => write!(f, "RPC deadline reached"),
+            BrokenConnection => write!(f, "connection broke"),
+            ChannelOvercrowded => write!(f, "the channel is overcrowded"),
+        }
     }
 }
 
