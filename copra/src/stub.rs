@@ -17,17 +17,17 @@ pub struct RpcError {
 }
 
 impl RpcError {
-    /// Create a new error with error kind and error description
+    /// Create a new error with error kind and error description.
     pub fn new(kind: RpcErrorKind, text: String) -> Self {
         RpcError { kind, text }
     }
 
-    /// Get kind
+    /// Get kind.
     pub fn kind(&self) -> RpcErrorKind {
         self.kind
     }
 
-    /// Get error text
+    /// Get error text.
     pub fn text(&self) -> &str {
         &self.text
     }
@@ -54,49 +54,49 @@ impl Error for RpcError {
 /// The error kind for an RPC request
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RpcErrorKind {
-    /// Server complains that the request message is invalid
+    /// Server complains that the request message is invalid.
     ///
     /// This error is returned when the server fails to deserialize
     /// the request (e.g. uninitialized field exists in protobuf message),
     /// or the request message violates some predefined contracts.
     InvalidRequest,
 
-    /// The server failed to carry on some internal logics
+    /// The server failed to carry on some internal logics.
     InteralServerError,
 
-    /// Failed to connect the server at the provided address
+    /// Failed to connect the server at the provided address.
     ServerNotFound,
 
-    /// The requested service is not found
+    /// The requested service is not found.
     ServiceNotFound,
 
-    /// The requested method is not found with the service namespace
+    /// The requested method is not found with the service namespace.
     MethodNotFound,
 
-    /// Failed to serialize the request
+    /// Failed to serialize the request.
     RequestEncodeError,
 
-    /// Failed to deserialize the response
+    /// Failed to deserialize the response.
     ResponseDecodeError,
 
-    /// The server is overcrowded, and the request is refused
+    /// The server is overcrowded, and the request is refused.
     ServerOvercrowded,
 
-    /// The deadline is reached
+    /// The deadline is reached.
     TimeOut,
 
-    /// The error stems from TCP connection
+    /// The error stems from TCP connection.
     ///
     /// This error is returned when the connection is broken or shutdown by
     /// the server due to unrecoverable parse errors.
     BrokenConnection,
 
-    /// The underlying channel reached its concurrency limit
+    /// The underlying channel reached its concurrency limit.
     ChannelOvercrowded,
 }
 
 impl RpcErrorKind {
-    /// Create error kind from error code
+    /// Create error kind from error code.
     pub fn from_error_code(_code: i32) -> Self {
         unimplemented!()
     }
