@@ -17,6 +17,8 @@ travis-ci = { repository = "AprliRainkun/copra" }
 bytes = "0.4"
 futures = "0.1"
 httparse = "1.2"
+http = "0.1"
+h2 = "0.1"
 log = "0.3"
 tokio-io = "0.1"
 tokio-core = "0.1"

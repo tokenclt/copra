@@ -50,7 +50,7 @@ use self::connector::Connector;
 
 mod backend;
 pub(crate) mod connector;
-mod layer;
+pub mod layer;
 
 /// A future returned by `ChannelBuilder::build` which will resolve to a `Channel`
 /// when the channel is ready for use.

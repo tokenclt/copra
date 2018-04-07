@@ -174,6 +174,8 @@ extern crate bytes;
 #[macro_use]
 extern crate futures;
 extern crate httparse;
+extern crate http;
+extern crate h2;
 #[macro_use]
 extern crate log;
 extern crate protobuf;
